@@ -1,50 +1,41 @@
-# Welcome to your Expo app 👋
+# Nostr Notes (Piano Strudel)
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+A React Native (Expo) application featuring a graphical piano and a sliding note chart, powered by [Strudel](https://strudel.cc/) for audio synthesis.
 
-## Get started
+## Features
 
-1. Install dependencies
+- **Graphical Piano**: Interactive keyboard with white and black keys.
+- **Sliding Note Chart**: Visualizes notes flowing in real-time using `react-native-reanimated` for smooth performance (UI thread animation).
+- **Web Audio**: Uses Strudel REPL/Core for sound generation (Web only currently).
 
-   ```bash
-   npm install
-   ```
+## Project Structure
 
-2. Start the app
+- `app/index.tsx`: Main game screen coordinating state.
+- `components/Piano.tsx`: The piano keyboard UI.
+- `components/NoteChart.tsx`: The sliding note visualization.
+- `utils/strudel.ts`: Interface to the Strudel audio engine.
 
-   ```bash
-   npx expo start
-   ```
+## Animation & Performance
 
-In the output, you'll find options to open the app in a
+To avoid VDOM synchronization issues (like in 2048):
+1.  **Decoupled Animation**: The sliding effect is handled by `react-native-reanimated` on the UI thread. The Javascript thread does not trigger re-renders for every frame of movement.
+2.  **State Management**: React state is only updated when a *new note* is played, not for the movement of existing notes.
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+## Limitations
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
+- **Audio Support**: The Strudel library relies on the Web Audio API. This project currently plays sound only when running on **Web**. To support iOS/Android native audio with Strudel, you would need to run the engine inside a `WebView` or use a different native audio library.
 
-## Get a fresh project
+## Running
 
-When you're ready, run:
-
-```bash
-npm run reset-project
-```
-
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
-
-## Learn more
-
-To learn more about developing your project with Expo, look at the following resources:
-
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
-
-## Join the community
-
-Join our community of developers creating universal apps.
-
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+1.  Install dependencies:
+    ```bash
+    npm install
+    ```
+2.  Run on Web (Recommended for Audio):
+    ```bash
+    npx expo start --web
+    ```
+3.  Run on iOS/Android (Visuals only):
+    ```bash
+    npx expo start
+    ```
