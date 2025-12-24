@@ -203,8 +203,8 @@ const Piano: Component = () => {
   const whiteKeyWidth = () => 100 / totalWhiteKeys(); // percent
 
   return (
-    <div class="flex flex-col items-center gap-4 w-full max-w-6xl relative">
-        <div class="relative w-full h-80 sm:h-96 select-none bg-gray-900 pt-4 pb-12 px-4 rounded-xl shadow-2xl overflow-hidden z-10">
+    <div class="flex flex-col items-center gap-4 w-full max-w-full relative">
+        <div class="relative w-full h-[55vh] sm:h-[60vh] max-h-[420px] min-h-[220px] select-none bg-gray-900 pt-3 sm:pt-4 pb-10 sm:pb-12 px-2 sm:px-4 rounded-xl shadow-2xl overflow-hidden z-10">
           {/* Octave Controls - Bottom Centered */}
           <div class="absolute bottom-2 left-1/2 -translate-x-1/2 flex items-center gap-2 z-50">
                 <button 

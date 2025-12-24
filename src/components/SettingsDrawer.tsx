@@ -1,8 +1,63 @@
 import Drawer from '@corvu/drawer';
 import { settings, setSettings, Waveform } from '../store';
-import type { Component } from 'solid-js';
+import { Show, createSignal, onCleanup, onMount, type Component } from 'solid-js';
+
+// Chrome/Edge on desktop + Android fire `beforeinstallprompt`.
+// Safari/iOS does not, so we show an "Add to Home Screen" hint there.
+type BeforeInstallPromptEvent = Event & {
+  prompt: () => Promise<void>;
+  userChoice: Promise<{ outcome: 'accepted' | 'dismissed'; platform: string }>;
+};
 
 const SettingsDrawer: Component = () => {
+  const [deferredPrompt, setDeferredPrompt] =
+    createSignal<BeforeInstallPromptEvent | null>(null);
+  const [isInstalled, setIsInstalled] = createSignal(false);
+  const [showIosA2hsHint, setShowIosA2hsHint] = createSignal(false);
+
+  const handleInstallClick = async () => {
+    const evt = deferredPrompt();
+    if (!evt) return;
+    await evt.prompt();
+    // Regardless of outcome, browsers only allow prompting once per event.
+    // We'll clear it and let the browser re-emit later if still eligible.
+    try {
+      await evt.userChoice;
+    } finally {
+      setDeferredPrompt(null);
+    }
+  };
+
+  onMount(() => {
+    const nav = navigator as Navigator & { standalone?: boolean };
+    const installed =
+      window.matchMedia?.('(display-mode: standalone)')?.matches === true ||
+      nav.standalone === true;
+    setIsInstalled(installed);
+
+    const ua = navigator.userAgent || '';
+    const isIOS = /iphone|ipad|ipod/i.test(ua);
+    setShowIosA2hsHint(isIOS && !installed);
+
+    const onBeforeInstallPrompt = (e: Event) => {
+      // Required: prevents mini-infobar and lets us prompt on a user gesture.
+      e.preventDefault();
+      setDeferredPrompt(e as BeforeInstallPromptEvent);
+    };
+    const onAppInstalled = () => {
+      setIsInstalled(true);
+      setDeferredPrompt(null);
+      setShowIosA2hsHint(false);
+    };
+
+    window.addEventListener('beforeinstallprompt', onBeforeInstallPrompt);
+    window.addEventListener('appinstalled', onAppInstalled);
+    onCleanup(() => {
+      window.removeEventListener('beforeinstallprompt', onBeforeInstallPrompt);
+      window.removeEventListener('appinstalled', onAppInstalled);
+    });
+  });
+
   return (
     <Drawer breakPoints={[0.75]}>
       {(props) => (
@@ -125,6 +180,38 @@ const SettingsDrawer: Component = () => {
                       />
                     </label>
                   </div>
+                </div>
+
+                {/* App / Install Section */}
+                <div class="space-y-4">
+                  <h3 class="text-lg font-bold text-corvu-text border-b border-corvu-300 pb-1">App</h3>
+
+                  <Show when={isInstalled()}>
+                    <div class="rounded-lg border border-corvu-200 bg-white px-3 py-2 text-sm text-corvu-text">
+                      Installed ✓
+                    </div>
+                  </Show>
+
+                  <Show when={!isInstalled() && deferredPrompt()}>
+                    <button
+                      onClick={handleInstallClick}
+                      class="w-full rounded-lg bg-corvu-400 px-4 py-2 text-white font-medium transition-all hover:bg-corvu-300 active:translate-y-0.5 shadow"
+                    >
+                      Install app
+                    </button>
+                    <p class="text-xs text-gray-500">
+                      Your browser will ask for confirmation.
+                    </p>
+                  </Show>
+
+                  <Show when={!isInstalled() && showIosA2hsHint()}>
+                    <div class="rounded-lg border border-corvu-200 bg-white px-3 py-2 text-sm text-corvu-text space-y-1">
+                      <div class="font-semibold">Install on iPhone/iPad</div>
+                      <div class="text-xs text-gray-600">
+                        Open in Safari → Share → “Add to Home Screen”.
+                      </div>
+                    </div>
+                  </Show>
                 </div>
                 
               </div>
