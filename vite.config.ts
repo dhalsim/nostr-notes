@@ -17,7 +17,7 @@ export default defineConfig({
         theme_color: '#111827', // Gray-900 from your piano bg
         background_color: '#f3f1fe', // Corvu bg
         display: 'standalone',
-        orientation: 'any',
+        orientation: 'landscape',
         icons: [
           {
             src: 'manifest-icon-192.maskable.png',
