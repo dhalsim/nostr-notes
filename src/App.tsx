@@ -11,7 +11,7 @@ const App: Component = () => {
       <SettingsDrawer />
 
       <div class="mt-8 text-center text-sm text-gray-500">
-        <p>Use keyboard (A-K) or click/touch to play.</p>
+        <p>Press the keys on your keyboard or click/touch to play.</p>
       </div>
     </div>
   );

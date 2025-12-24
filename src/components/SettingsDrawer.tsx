@@ -72,7 +72,39 @@ const SettingsDrawer: Component = () => {
                 <div class="space-y-4">
                   <h3 class="text-lg font-bold text-corvu-text border-b border-corvu-300 pb-1">Display</h3>
                   
-                  <div class="space-y-3">
+                  {/* Keyboard Size Control */}
+                  <div class="space-y-2">
+                    <div class="flex justify-between">
+                        <h3 class="font-semibold text-corvu-text text-sm">Keyboard Size</h3>
+                    </div>
+                    <div class="flex gap-2 p-1 bg-gray-200 rounded-lg">
+                        <button 
+                            class={`flex-1 py-1.5 rounded-md text-sm font-medium transition-all ${
+                                settings.octaveCount === 1 
+                                ? 'bg-white text-corvu-text shadow-sm' 
+                                : 'text-gray-500 hover:text-gray-700'
+                            }`}
+                            onClick={() => setSettings('octaveCount', 1)}
+                        >
+                            1 Octave
+                        </button>
+                        <button 
+                            class={`flex-1 py-1.5 rounded-md text-sm font-medium transition-all ${
+                                settings.octaveCount === 2 
+                                ? 'bg-white text-corvu-text shadow-sm' 
+                                : 'text-gray-500 hover:text-gray-700'
+                            }`}
+                            onClick={() => setSettings('octaveCount', 2)}
+                        >
+                            2 Octaves
+                        </button>
+                    </div>
+                    <p class="text-xs text-gray-500">
+                        Automatically adjusts on resize, or select manually.
+                    </p>
+                  </div>
+
+                  <div class="space-y-3 pt-2">
                     <label class="flex items-center justify-between cursor-pointer">
                       <span class="font-semibold text-corvu-text text-sm">Show Note Names</span>
                       <input 
