@@ -41,7 +41,6 @@ const App: Component = () => {
           Rotate your phone for the best experience
         </div>
       </Show>
-      <h1 class="text-3xl sm:text-4xl font-bold mb-4 sm:mb-6 text-corvu-text">Solid Piano</h1>
       
       <Piano />
       <SettingsDrawer />
