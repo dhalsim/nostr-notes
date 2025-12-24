@@ -46,8 +46,11 @@ const App: Component = () => {
       <Piano />
       <SettingsDrawer />
 
-      <div class="mt-4 sm:mt-6 text-center text-sm text-gray-500">
+      <div class="text-center text-sm text-gray-500">
         <p>Press the keys on your keyboard or click/touch to play.</p>
+        <p class="mt-1 text-[11px] text-gray-400 font-mono">
+          v{__APP_VERSION__} ({__GIT_SHA__})
+        </p>
       </div>
     </div>
   );
