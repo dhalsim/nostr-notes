@@ -69,6 +69,7 @@ const OCTAVE_2_MAPPING = {
 
 const Piano: Component = () => {
   const [activeKeys, setActiveKeys] = createSignal<Set<string>>(new Set());
+  const [desktopCapable, setDesktopCapable] = createSignal(false);
   
   // Computed Keys based on settings
   const keys = () => generateKeys(settings.baseOctave, settings.octaveCount);
@@ -188,8 +189,22 @@ const Piano: Component = () => {
     if (note) handleNoteEnd(note);
   };
 
-  // Auto-detect screen size logic removed to respect persistent settings
   onMount(() => {
+    // Detect whether the device supports a "fine" pointer (i.e., mouse or trackpad, typical of desktops/laptops)
+    const mql = window.matchMedia?.('(pointer: fine)');
+    
+    if (mql) {
+      const update = () => setDesktopCapable(mql.matches);
+      update();
+      // Safari < 14 uses addListener/removeListener.
+      if (mql.addEventListener) mql.addEventListener('change', update);
+      else mql.addListener(update);
+      onCleanup(() => {
+        if (mql.removeEventListener) mql.removeEventListener('change', update);
+        else mql.removeListener(update);
+      });
+    }
+    
     window.addEventListener('keydown', handleKeyDown);
     window.addEventListener('keyup', handleKeyUp);
   });
@@ -201,6 +216,7 @@ const Piano: Component = () => {
   
   const totalWhiteKeys = () => keys().whiteKeys.length;
   const whiteKeyWidth = () => 100 / totalWhiteKeys(); // percent
+  const showShortcuts = () => settings.showShortcuts && desktopCapable();
 
   return (
     <div class="flex flex-col items-center gap-4 w-full max-w-full relative">
@@ -244,8 +260,8 @@ const Piano: Component = () => {
                     {settings.showNotes && (
                       <span class="text-[10px] sm:text-xs font-bold text-gray-400 mb-1 truncate w-full text-center">{note}</span>
                     )}
-                    {settings.showShortcuts && (
-                      <span class="hidden sm:block text-[9px] sm:text-[10px] font-bold text-corvu-400 border border-corvu-200 px-1 rounded">
+                    {showShortcuts() && (
+                      <span class="text-[9px] sm:text-[10px] font-bold text-corvu-400 border border-corvu-200 px-1 rounded">
                         {getKeyLabel(note)}
                       </span>
                     )}
@@ -287,8 +303,8 @@ const Piano: Component = () => {
                      {settings.showNotes && (
                        <span class="text-[8px] sm:text-[9px] font-bold text-gray-300 mb-0.5 truncate w-full text-center">{item.note}</span>
                      )}
-                     {settings.showShortcuts && (
-                       <span class="hidden sm:block text-[8px] font-bold text-corvu-300 border border-gray-600 px-0.5 rounded bg-gray-900/80">
+                     {showShortcuts() && (
+                       <span class="text-[8px] font-bold text-corvu-300 border border-gray-600 px-0.5 rounded bg-gray-900/80">
                          {getKeyLabel(item.note)}
                        </span>
                      )}

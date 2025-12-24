@@ -1,6 +1,6 @@
 import Drawer from '@corvu/drawer';
 import { settings, setSettings, Waveform } from '../store';
-import { Show, createSignal, onCleanup, onMount, type Component } from 'solid-js';
+import { Show, createEffect, createSignal, onCleanup, onMount, type Component } from 'solid-js';
 
 // Chrome/Edge on desktop + Android fire `beforeinstallprompt`.
 // Safari/iOS does not, so we show an "Add to Home Screen" hint there.
@@ -14,6 +14,7 @@ const SettingsDrawer: Component = () => {
     createSignal<BeforeInstallPromptEvent | null>(null);
   const [isInstalled, setIsInstalled] = createSignal(false);
   const [showIosA2hsHint, setShowIosA2hsHint] = createSignal(false);
+  const [desktopCapable, setDesktopCapable] = createSignal(false);
 
   const handleInstallClick = async () => {
     const evt = deferredPrompt();
@@ -56,6 +57,27 @@ const SettingsDrawer: Component = () => {
       window.removeEventListener('beforeinstallprompt', onBeforeInstallPrompt);
       window.removeEventListener('appinstalled', onAppInstalled);
     });
+  });
+
+  // Desktop = fine pointer (mouse/trackpad). This avoids "sm/lg" width false-positives on phones in landscape.
+  onMount(() => {
+    const mql = window.matchMedia?.('(pointer: fine)');
+    if (!mql) return;
+    const update = () => setDesktopCapable(mql.matches);
+    update();
+    if (mql.addEventListener) mql.addEventListener('change', update);
+    else mql.addListener(update);
+    onCleanup(() => {
+      if (mql.removeEventListener) mql.removeEventListener('change', update);
+      else mql.removeListener(update);
+    });
+  });
+
+  // Keep UI consistent: shortcuts are desktop-only, so turn off the toggle on non-desktop devices.
+  createEffect(() => {
+    if (!desktopCapable() && settings.showShortcuts) {
+      setSettings('showShortcuts', false);
+    }
   });
 
   return (
@@ -187,12 +209,18 @@ const SettingsDrawer: Component = () => {
                       />
                     </label>
 
-                    <label class="flex items-center justify-between cursor-pointer">
-                      <span class="font-semibold text-corvu-text text-sm">Show Keyboard Shortcuts</span>
+                    <label class={`flex items-center justify-between ${desktopCapable() ? 'cursor-pointer' : 'cursor-not-allowed opacity-60'}`}>
+                      <span class="font-semibold text-corvu-text text-sm">
+                        Show Keyboard Shortcuts
+                        <Show when={!desktopCapable()}>
+                          <span class="ml-2 text-xs font-normal text-gray-500">(desktop only)</span>
+                        </Show>
+                      </span>
                       <input 
                         type="checkbox"
                         checked={settings.showShortcuts}
                         onChange={(e) => setSettings('showShortcuts', e.currentTarget.checked)}
+                        disabled={!desktopCapable()}
                         class="w-5 h-5 rounded border-corvu-300 text-corvu-400 focus:ring-corvu-400"
                       />
                     </label>
