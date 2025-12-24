@@ -3,7 +3,7 @@
   "short_name": "Piano",
   "theme_color": "#111827",
   "background_color": "#f3f1fe",
-  "display": "standalone",
+  "display": "fullscreen",
   "orientation": "landscape",
   "scope": "/",
   "start_url": "/",

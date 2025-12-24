@@ -31,7 +31,7 @@ export default defineConfig({
         description: 'A responsive synthesizer piano built with SolidJS',
         theme_color: '#111827', // Gray-900 from your piano bg
         background_color: '#f3f1fe', // Corvu bg
-        display: 'standalone',
+        display: 'fullscreen',
         orientation: 'landscape',
         icons: [
           {
