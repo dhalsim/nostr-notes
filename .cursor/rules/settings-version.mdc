@@ -1,0 +1,5 @@
+---
+alwaysApply: true
+---
+
+Whenever you make a change to the settings structure or behavior that is not backward compatible, you must increment the SETTINGS_VERSION constant in the store.ts file. This ensures correct migration and loading of user preferences.

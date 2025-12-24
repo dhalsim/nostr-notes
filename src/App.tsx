@@ -1,4 +1,5 @@
 import { Show, createSignal, onCleanup, onMount, type Component } from 'solid-js';
+
 import Piano from './components/Piano';
 import SettingsDrawer from './components/SettingsDrawer';
 
@@ -9,7 +10,9 @@ const App: Component = () => {
     // Only show on touch-ish devices; desktop users rotating a window shouldn't see this.
     const orientationMql = window.matchMedia?.('(orientation: portrait)');
     const coarseMql = window.matchMedia?.('(pointer: coarse)');
-    if (!orientationMql || !coarseMql) return;
+    if (!orientationMql || !coarseMql) {
+      return;
+    }
 
     const update = () => {
       setShowRotateHint(orientationMql.matches && coarseMql.matches);
@@ -18,12 +21,18 @@ const App: Component = () => {
 
     // Safari < 14 uses addListener/removeListener.
     const add = (mql: MediaQueryList, fn: () => void) => {
-      if (mql.addEventListener) mql.addEventListener('change', fn);
-      else mql.addListener(fn);
+      if (mql.addEventListener) {
+        mql.addEventListener('change', fn);
+      } else {
+        mql.addListener(fn);
+      }
     };
     const remove = (mql: MediaQueryList, fn: () => void) => {
-      if (mql.removeEventListener) mql.removeEventListener('change', fn);
-      else mql.removeListener(fn);
+      if (mql.removeEventListener) {
+        mql.removeEventListener('change', fn);
+      } else {
+        mql.removeListener(fn);
+      }
     };
 
     add(orientationMql, update);
@@ -41,7 +50,7 @@ const App: Component = () => {
           Rotate your phone for the best experience
         </div>
       </Show>
-      
+
       <Piano />
       <SettingsDrawer />
 
@@ -56,5 +65,3 @@ const App: Component = () => {
 };
 
 export default App;
-
-

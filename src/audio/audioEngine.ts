@@ -33,17 +33,19 @@ function getFreq(note: string) {
 }
 
 export function playNote(note: string) {
-  if (activeNotes[note]) return;
-  
+  if (activeNotes[note]) {
+    return;
+  }
+
   initAudio();
   const ctx = getAudioContext();
-  
+
   const osc = ctx.createOscillator();
   const gainNode = ctx.createGain();
-  
+
   osc.type = settings.waveform;
   osc.frequency.value = getFreq(note);
-  
+
   const now = ctx.currentTime;
   const vol = settings.volume;
 
@@ -54,9 +56,9 @@ export function playNote(note: string) {
 
   osc.connect(gainNode);
   gainNode.connect(ctx.destination);
-  
+
   osc.start(now);
-  
+
   activeNotes[note] = { osc, gain: gainNode };
 }
 
@@ -66,7 +68,7 @@ export function stopNote(note: string) {
     const { osc, gain } = voice;
     const ctx = getAudioContext();
     const now = ctx.currentTime;
-    
+
     try {
       gain.gain.cancelScheduledValues(now);
       gain.gain.setValueAtTime(gain.gain.value, now);
@@ -79,5 +81,3 @@ export function stopNote(note: string) {
     delete activeNotes[note];
   }
 }
-
-

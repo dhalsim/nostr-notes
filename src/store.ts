@@ -1,5 +1,5 @@
-import { createEffect } from "solid-js";
-import { createStore } from "solid-js/store";
+import { createEffect } from 'solid-js';
+import { createStore } from 'solid-js/store';
 
 export type Waveform = 'triangle' | 'sine' | 'square' | 'sawtooth';
 
@@ -20,7 +20,7 @@ const DEFAULT_SETTINGS: Settings = {
   volume: 0.5,
   showNotes: true,
   showShortcuts: true,
-  octaveCount: 1, 
+  octaveCount: 1,
   baseOctave: 4,
 };
 
@@ -46,7 +46,8 @@ export const [settings, setSettings] = createStore<Settings>(loadSettings());
 createEffect(() => {
   const data = JSON.stringify({
     version: SETTINGS_VERSION,
-    data: settings
+    data: settings,
   });
+  
   localStorage.setItem(STORAGE_KEY, data);
 });
