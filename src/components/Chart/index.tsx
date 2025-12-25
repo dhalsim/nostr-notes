@@ -11,7 +11,7 @@ export interface NoteEvent {
 }
 
 // Twinkle Twinkle Little Star
-const DEMO_MELODY: NoteEvent[] = [
+export const DEMO_MELODY: NoteEvent[] = [
   { note: 'C4', duration: 1 },
   { note: 'C4', duration: 1 },
   { note: 'G4', duration: 1 },

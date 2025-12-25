@@ -1,6 +1,7 @@
 import { Show, createSignal, onCleanup, onMount, type Component } from 'solid-js';
 
-import ChartDisplay from './components/Chart';
+import { toggle } from '@lib/audio/playbackEngine';
+import ChartDisplay, { DEMO_MELODY } from './components/Chart';
 import Piano from './components/Piano';
 import SettingsDrawer from './components/SettingsDrawer';
 
@@ -8,6 +9,21 @@ const App: Component = () => {
   const [showRotateHint, setShowRotateHint] = createSignal(false);
 
   onMount(() => {
+    // Keyboard shortcut: Enter to toggle playback
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Enter' && !e.repeat) {
+        // Don't trigger if user is typing in an input
+        if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) {
+          return;
+        }
+        e.preventDefault();
+        toggle(DEMO_MELODY);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    onCleanup(() => window.removeEventListener('keydown', handleKeyDown));
+
     // Only show on touch-ish devices; desktop users rotating a window shouldn't see this.
     const orientationMql = window.matchMedia?.('(orientation: portrait)');
     const coarseMql = window.matchMedia?.('(pointer: coarse)');
@@ -64,7 +80,7 @@ const App: Component = () => {
       <SettingsDrawer />
 
       <div class="shrink-0 text-center text-sm text-gray-500">
-        <p>Press the keys on your keyboard or click/touch to play.</p>
+        <p>Press the keys on your keyboard or click/touch to play. Press Enter to play the song.</p>
         <p class="mt-1 text-[11px] text-gray-400 font-mono">
           v{__APP_VERSION__} ({__GIT_SHA__})
         </p>

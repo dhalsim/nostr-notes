@@ -1,7 +1,8 @@
-import { For, createSignal, onCleanup, onMount } from 'solid-js';
+import { For, createMemo, createSignal, onCleanup, onMount } from 'solid-js';
 import type { Component } from 'solid-js';
 
 import { playNote, stopNote } from '@lib/audio/audioEngine';
+import { playback } from '@lib/playbackStore';
 import { setSettings, settings } from '@lib/store';
 import { getNoteColor } from '@lib/utils/musicUtils';
 
@@ -76,6 +77,15 @@ const Piano: Component = () => {
 
   // Computed Keys based on settings
   const keys = () => generateKeys(settings.baseOctave, settings.octaveCount);
+
+  // Currently playing note from playback (for highlighting)
+  const playbackNote = createMemo(() => {
+    const { melody, currentNoteIndex, isPlaying } = playback;
+    if (!isPlaying || currentNoteIndex < 0 || currentNoteIndex >= melody.length) {
+      return null;
+    }
+    return melody[currentNoteIndex].note;
+  });
 
   // Dynamic Map
   const currentMap = () => {
@@ -253,6 +263,7 @@ const Piano: Component = () => {
                 : undefined;
 
               const isActive = () => activeKeys().has(note);
+              const isPlaybackHighlight = () => playbackNote() === note;
 
               return (
                 <div
@@ -283,9 +294,14 @@ const Piano: Component = () => {
                     handleNoteEnd(note);
                   }}
                 >
+                  {isPlaybackHighlight() && (
+                    <div class="pointer-events-none absolute inset-x-0 bottom-2 flex justify-center z-30">
+                      <div class="w-12 h-12 rounded-full bg-blue-500/80 shadow-[0_0_15px_rgba(59,130,246,0.5)] animate-pulse" />
+                    </div>
+                  )}
                   {settings.showNotes && (
                     <span
-                      class={`text-[10px] sm:text-xs font-bold mb-1 truncate w-full text-center ${color ? 'text-white drop-shadow-md' : 'text-gray-400'}`}
+                      class={`text-[10px] sm:text-xs font-bold mb-1 truncate w-full text-center relative z-40 ${color ? 'text-white drop-shadow-md' : 'text-gray-400'}`}
                     >
                       {note}
                     </span>
@@ -322,6 +338,7 @@ const Piano: Component = () => {
                 ? getNoteColor(item.note, settings.noteColors)
                 : undefined;
               const isActive = () => activeKeys().has(item.note);
+              const isPlaybackHighlight = () => playbackNote() === item.note;
 
               return (
                 <div
@@ -351,9 +368,14 @@ const Piano: Component = () => {
                     handleNoteEnd(item.note);
                   }}
                 >
+                  {isPlaybackHighlight() && (
+                    <div class="pointer-events-none absolute inset-x-0 bottom-1 flex justify-center z-30">
+                      <div class="w-9 h-9 rounded-full bg-blue-400/80 shadow-[0_0_10px_rgba(96,165,250,0.6)] animate-pulse" />
+                    </div>
+                  )}
                   {settings.showNotes && (
                     <span
-                      class={`text-[8px] sm:text-[9px] font-bold mb-0.5 truncate w-full text-center ${color ? 'text-white drop-shadow-sm' : 'text-gray-300'}`}
+                      class={`text-[8px] sm:text-[9px] font-bold mb-0.5 truncate w-full text-center relative z-40 ${color ? 'text-white drop-shadow-sm' : 'text-gray-300'}`}
                     >
                       {item.note}
                     </span>
