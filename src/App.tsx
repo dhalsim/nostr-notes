@@ -10,9 +10,9 @@ const App: Component = () => {
   const [showRotateHint, setShowRotateHint] = createSignal(false);
 
   onMount(() => {
-    // Keyboard shortcut: Enter to toggle playback
+    // Keyboard shortcut: Space to toggle playback
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Enter' && !e.repeat) {
+      if (e.key === 'Space' && !e.repeat) {
         // Don't trigger if user is typing in an input
         if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) {
           return;
@@ -81,7 +81,7 @@ const App: Component = () => {
       <SettingsDrawer />
 
       <div class="shrink-0 text-center text-sm text-gray-500">
-        <p>Press the keys on your keyboard or click/touch to play. Press Enter to play the song.</p>
+        <p>Press the keys on your keyboard or click/touch to play. Press Space key to play the song.</p>
         <p class="mt-1 text-[11px] text-gray-400 font-mono">
           v{__APP_VERSION__} ({__GIT_SHA__})
         </p>

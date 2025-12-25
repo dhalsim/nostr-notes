@@ -6,6 +6,20 @@ import { playNote, stopNote } from './audioEngine';
 let playbackTimeoutId: ReturnType<typeof setTimeout> | null = null;
 let currentlyPlayingNote: string | null = null;
 
+function isSameMelody(a: NoteEvent[], b: NoteEvent[]): boolean {
+  if (a.length !== b.length) {
+    return false;
+  }
+
+  for (let i = 0; i < a.length; i += 1) {
+    if (a[i].note !== b[i].note || a[i].duration !== b[i].duration) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
 /**
  * Calculates the duration of a note in milliseconds based on tempo
  */
@@ -20,9 +34,19 @@ function getNoteDurationMs(duration: number, tempo: number): number {
 function scheduleNextNote(noteIndex: number): void {
   const { melody, tempo, isPlaying } = playback;
 
-  // Stop if not playing or reached end
-  if (!isPlaying || noteIndex >= melody.length) {
+  // Stop if not playing
+  if (!isPlaying) {
+    return;
+  }
+
+  // Stop if reached end
+  if (noteIndex >= melody.length) {
+    if (melody.length > 0) {
+      setPlayback('lastCompletedNoteIndex', melody.length - 1);
+    }
+
     stop();
+
     return;
   }
 
@@ -43,6 +67,7 @@ function scheduleNextNote(noteIndex: number): void {
   // Schedule the next note
   const durationMs = getNoteDurationMs(note.duration, tempo);
   playbackTimeoutId = setTimeout(() => {
+    setPlayback('lastCompletedNoteIndex', noteIndex);
     scheduleNextNote(noteIndex + 1);
   }, durationMs);
 }
@@ -51,10 +76,11 @@ function scheduleNextNote(noteIndex: number): void {
  * Start or resume playback
  */
 export function play(melody?: NoteEvent[]): void {
-  // If melody is provided, set it and start from beginning
-  if (melody) {
+  // If melody is provided, set it. Only reset if it's truly a new melody.
+  if (melody && !isSameMelody(melody, playback.melody)) {
     setPlayback('melody', melody);
     setPlayback('currentNoteIndex', -1);
+    setPlayback('lastCompletedNoteIndex', -1);
   }
 
   // Don't start if no melody
@@ -64,8 +90,8 @@ export function play(melody?: NoteEvent[]): void {
 
   setPlayback('isPlaying', true);
 
-  // Start from current position or beginning
-  const startIndex = playback.currentNoteIndex < 0 ? 0 : playback.currentNoteIndex;
+  // Start from the note right after the last completed one (or beginning)
+  const startIndex = playback.lastCompletedNoteIndex < 0 ? 0 : playback.lastCompletedNoteIndex + 1;
   scheduleNextNote(startIndex);
 }
 
@@ -92,6 +118,7 @@ export function pause(): void {
 export function stop(): void {
   setPlayback('isPlaying', false);
   setPlayback('currentNoteIndex', -1);
+  setPlayback('lastCompletedNoteIndex', -1);
 
   if (playbackTimeoutId) {
     clearTimeout(playbackTimeoutId);
@@ -142,6 +169,7 @@ export function seek(noteIndex: number): void {
   // Set the new position
   const clampedIndex = Math.max(-1, Math.min(noteIndex, playback.melody.length - 1));
   setPlayback('currentNoteIndex', clampedIndex);
+  setPlayback('lastCompletedNoteIndex', Math.max(-1, clampedIndex - 1));
 
   // Resume if was playing
   if (wasPlaying && clampedIndex >= 0) {

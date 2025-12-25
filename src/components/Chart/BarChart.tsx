@@ -1,5 +1,6 @@
 import { For, createMemo } from 'solid-js';
 
+import { toggle } from '@lib/audio/playbackEngine';
 import { playback } from '@lib/playbackStore';
 import { settings } from '@lib/store';
 import { getNoteColor, getSolfege } from '@lib/utils/musicUtils';
@@ -14,7 +15,7 @@ const BarChart = (props: BarChartProps) => {
   const BAR_WIDTH_UNIT = 60; // px per duration unit
   const BAR_GAP = 6;
   const BAR_HEIGHT = 10;
-  const PLAYHEAD_X = 90; // Fixed playhead position from left
+  const PLAYHEAD_X = 40; // Fixed playhead position from left
 
   // Staff-like grid constants (in viewBox units)
   const VIEWBOX_HEIGHT = 80;
@@ -75,14 +76,12 @@ const BarChart = (props: BarChartProps) => {
 
   // Calculate scroll offset to align current note with playhead
   const scrollOffset = createMemo(() => {
-    const { currentNoteIndex, isPlaying } = playback;
-    if (!isPlaying || currentNoteIndex < 0) {
+    const anchorIndex = playback.isPlaying ? playback.currentNoteIndex : playback.lastCompletedNoteIndex;
+    if (anchorIndex < 0) {
       return 0;
     }
 
-    // Target the NEXT note's position to slide smoothly across the current note's duration
-    // This creates the effect of the current note sliding away from the playhead
-    const targetIndex = currentNoteIndex + 1;
+    const targetIndex = anchorIndex + 1;
     const timelineItems = timeline().items;
 
     // If we're at the last note, we target the end of the timeline
@@ -114,10 +113,35 @@ const BarChart = (props: BarChartProps) => {
     <div class="flex-1 min-w-max bg-white rounded-md shadow-inner p-1 relative overflow-hidden">
       {/* Playhead line - fixed position */}
       <div
-        class="pointer-events-none absolute inset-y-3 w-0.5 bg-red-500 z-20"
+        class="absolute inset-y-3 w-0.5 bg-red-500 z-20 flex flex-col justify-end items-center"
         style={{ left: `${PLAYHEAD_X}px` }}
       >
-        <div class="absolute -left-[1px] inset-y-0 w-1 bg-red-400/70 blur-sm" />
+        <div class="absolute -left-[1px] inset-y-0 w-1 bg-red-400/70 blur-sm pointer-events-none" />
+        
+        {/* Play/Pause Button */}
+        <button
+          class="relative translate-y-1/2 w-6 h-6 rounded-full bg-red-500 hover:bg-red-600 text-white flex items-center justify-center shadow-md transition-transform hover:scale-110 active:scale-95 z-30 cursor-pointer"
+          onClick={(e) => {
+            e.stopPropagation();
+            toggle(props.melody);
+          }}
+          title={playback.isPlaying ? 'Pause' : 'Play'}
+        >
+          <div class="pointer-events-none">
+            {playback.isPlaying ? (
+              // Pause Icon
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor">
+                <rect x="6" y="4" width="4" height="16" rx="1" />
+                <rect x="14" y="4" width="4" height="16" rx="1" />
+              </svg>
+            ) : (
+              // Play Icon
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M8 5v14l11-7z" />
+              </svg>
+            )}
+          </div>
+        </button>
       </div>
 
       {/* Scrollable content */}
