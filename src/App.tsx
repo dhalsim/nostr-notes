@@ -1,6 +1,7 @@
 import { Show, createSignal, onCleanup, onMount, type Component } from 'solid-js';
 
 import { toggle } from '@lib/audio/playbackEngine';
+
 import ChartDisplay, { DEMO_MELODY } from './components/Chart';
 import Piano from './components/Piano';
 import SettingsDrawer from './components/SettingsDrawer';

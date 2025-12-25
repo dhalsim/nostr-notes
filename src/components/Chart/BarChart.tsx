@@ -122,10 +122,7 @@ const BarChart = (props: BarChartProps) => {
 
       {/* Scrollable content */}
       <div class="relative w-full h-full">
-        <div
-          class="h-full"
-          style={{ width: `${svgWidth()}px`, ...scrollStyle() }}
-        >
+        <div class="h-full" style={{ width: `${svgWidth()}px`, ...scrollStyle() }}>
           <svg
             class="block h-full"
             viewBox={`0 0 ${svgWidth()} ${VIEWBOX_HEIGHT}`}
