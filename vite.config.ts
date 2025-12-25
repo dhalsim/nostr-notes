@@ -3,6 +3,7 @@ import solidPlugin from 'vite-plugin-solid';
 import tailwindcss from '@tailwindcss/vite';
 import { VitePWA } from 'vite-plugin-pwa';
 import { execSync } from 'node:child_process';
+import { fileURLToPath, URL } from 'node:url';
 
 const gitSha = (() => {
   try {
@@ -65,6 +66,11 @@ export default defineConfig({
   server: {
     watch: {
       ignored: ['**/deps/**'],
+    },
+  },
+  resolve: {
+    alias: {
+      '@lib': fileURLToPath(new URL('./src', import.meta.url)),
     },
   },
   optimizeDeps: {

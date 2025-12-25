@@ -2,6 +2,7 @@ import { createEffect } from 'solid-js';
 import { createStore } from 'solid-js/store';
 
 export type Waveform = 'triangle' | 'sine' | 'square' | 'sawtooth';
+export type ChartType = 'bar' | 'sheet';
 
 interface Settings {
   waveform: Waveform;
@@ -10,10 +11,23 @@ interface Settings {
   showShortcuts: boolean;
   octaveCount: number; // 1 or 2
   baseOctave: number; // e.g., 3, 4, 5
+  chartType: ChartType;
+  showKeyColors: boolean;
+  noteColors: Record<string, string>;
 }
 
-const SETTINGS_VERSION = 1;
+const SETTINGS_VERSION = 2;
 const STORAGE_KEY = 'solid-piano-settings';
+
+export const DEFAULT_NOTE_COLORS: Record<string, string> = {
+  C: '#ef4444', // Red (Do)
+  D: '#f97316', // Orange (Re)
+  E: '#eab308', // Yellow (Mi)
+  F: '#22c55e', // Green (Fa)
+  G: '#3b82f6', // Blue (Sol)
+  A: '#a855f7', // Purple (La)
+  B: '#ec4899', // Pink (Si)
+};
 
 const DEFAULT_SETTINGS: Settings = {
   waveform: 'triangle',
@@ -22,6 +36,9 @@ const DEFAULT_SETTINGS: Settings = {
   showShortcuts: true,
   octaveCount: 1,
   baseOctave: 4,
+  chartType: 'bar',
+  showKeyColors: true,
+  noteColors: DEFAULT_NOTE_COLORS,
 };
 
 // Load from LocalStorage
@@ -31,6 +48,9 @@ const loadSettings = (): Settings => {
     if (stored) {
       const parsed = JSON.parse(stored);
       if (parsed.version === SETTINGS_VERSION && parsed.data) {
+        return { ...DEFAULT_SETTINGS, ...parsed.data };
+      } else if (parsed.version < SETTINGS_VERSION && parsed.data) {
+        // Migration logic if needed (simple merge for now)
         return { ...DEFAULT_SETTINGS, ...parsed.data };
       }
     }
@@ -48,6 +68,6 @@ createEffect(() => {
     version: SETTINGS_VERSION,
     data: settings,
   });
-  
+
   localStorage.setItem(STORAGE_KEY, data);
 });

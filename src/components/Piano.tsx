@@ -1,8 +1,9 @@
 import { For, createSignal, onCleanup, onMount } from 'solid-js';
 import type { Component } from 'solid-js';
 
-import { playNote, stopNote } from '../audio/audioEngine';
-import { setSettings, settings } from '../store';
+import { playNote, stopNote } from '@lib/audio/audioEngine';
+import { setSettings, settings } from '@lib/store';
+import { getNoteColor } from '@lib/utils/musicUtils';
 
 // Helper to generate keys dynamically
 const generateKeys = (startOctave: number, count: number) => {
@@ -151,7 +152,7 @@ const Piano: Component = () => {
 
   const getKeyLabel = (note: string) => {
     const map = currentMap();
-    
+
     // Reverse lookup
     return (
       Object.keys(map)
@@ -162,13 +163,13 @@ const Piano: Component = () => {
 
   const handleNoteStart = (note: string) => {
     playNote(note);
-    
+
     setActiveKeys((prev) => new Set(prev).add(note));
   };
 
   const handleNoteEnd = (note: string) => {
     stopNote(note);
-    
+
     setActiveKeys((prev) => {
       const next = new Set(prev);
       next.delete(note);
@@ -240,64 +241,65 @@ const Piano: Component = () => {
   const showShortcuts = () => settings.showShortcuts && desktopCapable();
 
   return (
-    <div class="flex flex-col items-center gap-4 w-full max-w-full relative">
-      <div class="relative w-full h-[55vh] sm:h-[60vh] max-h-[420px] min-h-[220px] select-none bg-gray-900 pt-3 sm:pt-4 pb-10 sm:pb-12 px-2 sm:px-4 rounded-xl shadow-2xl overflow-hidden z-10">
-        {/* Octave Controls - Bottom Centered */}
-        <div class="absolute bottom-2 left-1/2 -translate-x-1/2 flex items-center gap-2 z-50">
-          <button
-            class="p-2 text-gray-400 hover:text-white hover:bg-gray-800 rounded-lg transition-colors disabled:opacity-30 cursor-pointer"
-            onClick={() => setSettings('baseOctave', Math.max(settings.baseOctave - 1, 1))}
-            disabled={settings.baseOctave <= 1}
-          >
-            ◀
-          </button>
-          <span class="font-mono font-bold text-xs text-gray-500 text-center uppercase tracking-wider min-w-[3rem]">
-            Oct {settings.baseOctave}
-          </span>
-          <button
-            class="p-2 text-gray-400 hover:text-white hover:bg-gray-800 rounded-lg transition-colors disabled:opacity-30 cursor-pointer"
-            onClick={() => setSettings('baseOctave', Math.min(settings.baseOctave + 1, 7))}
-            disabled={settings.baseOctave >= 7}
-          >
-            ▶
-          </button>
-        </div>
-
-        <div class="relative w-full h-full flex">
+    <div class="flex flex-col items-center gap-3 w-full max-w-full relative flex-1 min-h-0">
+      <div class="relative w-full flex-1 min-h-0 max-h-[520px] select-none bg-gray-900 pt-2 px-2 sm:pt-3 sm:px-3 rounded-xl shadow-2xl overflow-hidden z-10 flex flex-col gap-0">
+        {/* Keys Container */}
+        <div class="relative w-full flex-1 min-h-0 flex items-stretch">
           {/* White Keys */}
           <For each={keys().whiteKeys}>
-            {(note) => (
-              <div
-                class={`relative bg-white border border-gray-300 rounded-b-lg mx-[1px] first:ml-0 last:mr-0 z-10 active:bg-gray-200 transition-all origin-top cursor-pointer flex flex-col justify-end items-center pb-4 ${
-                  activeKeys().has(note)
-                    ? '!bg-gray-200 shadow-inner scale-y-[0.99] border-b-0'
-                    : 'shadow-md border-b-4'
-                }`}
-                style={{ width: `${whiteKeyWidth()}%` }}
-                onMouseDown={() => handleNoteStart(note)}
-                onMouseUp={() => handleNoteEnd(note)}
-                onMouseLeave={() => handleNoteEnd(note)}
-                onTouchStart={(e) => {
-                  e.preventDefault();
-                  handleNoteStart(note);
-                }}
-                onTouchEnd={(e) => {
-                  e.preventDefault();
-                  handleNoteEnd(note);
-                }}
-              >
-                {settings.showNotes && (
-                  <span class="text-[10px] sm:text-xs font-bold text-gray-400 mb-1 truncate w-full text-center">
-                    {note}
-                  </span>
-                )}
-                {showShortcuts() && (
-                  <span class="text-[9px] sm:text-[10px] font-bold text-corvu-400 border border-corvu-200 px-1 rounded">
-                    {getKeyLabel(note)}
-                  </span>
-                )}
-              </div>
-            )}
+            {(note) => {
+              const color = settings.showKeyColors
+                ? getNoteColor(note, settings.noteColors)
+                : undefined;
+
+              const isActive = () => activeKeys().has(note);
+
+              return (
+                <div
+                  class={`relative bg-white border border-gray-300 rounded-b-lg mx-[1px] first:ml-0 last:mr-0 z-10 active:bg-gray-200 transition-all origin-top cursor-pointer flex flex-col justify-end items-center pb-4 ${
+                    isActive()
+                      ? '!bg-gray-200 shadow-inner scale-y-[0.99] border-b-0'
+                      : 'shadow-md border-b-4'
+                  }`}
+                  style={{
+                    width: `${whiteKeyWidth()}%`,
+                    ...(color
+                      ? {
+                          'background-color': color,
+                          'border-color': isActive() ? color : undefined,
+                          filter: isActive() ? 'brightness(1.1)' : 'brightness(1)',
+                        }
+                      : {}),
+                  }}
+                  onMouseDown={() => handleNoteStart(note)}
+                  onMouseUp={() => handleNoteEnd(note)}
+                  onMouseLeave={() => handleNoteEnd(note)}
+                  onTouchStart={(e) => {
+                    e.preventDefault();
+                    handleNoteStart(note);
+                  }}
+                  onTouchEnd={(e) => {
+                    e.preventDefault();
+                    handleNoteEnd(note);
+                  }}
+                >
+                  {settings.showNotes && (
+                    <span
+                      class={`text-[10px] sm:text-xs font-bold mb-1 truncate w-full text-center ${color ? 'text-white drop-shadow-md' : 'text-gray-400'}`}
+                    >
+                      {note}
+                    </span>
+                  )}
+                  {showShortcuts() && (
+                    <span
+                      class={`text-[9px] sm:text-[10px] font-bold border px-1 rounded ${color ? 'text-white border-white/50' : 'text-corvu-400 border-corvu-200'}`}
+                    >
+                      {getKeyLabel(note)}
+                    </span>
+                  )}
+                </div>
+              );
+            }}
           </For>
 
           {/* Black Keys */}
@@ -316,12 +318,27 @@ const Piano: Component = () => {
 
               const left = `calc(${item.pos * whiteKeyWidth()}% - ${finalWidth / 2}%)`;
 
+              const color = settings.showKeyColors
+                ? getNoteColor(item.note, settings.noteColors)
+                : undefined;
+              const isActive = () => activeKeys().has(item.note);
+
               return (
                 <div
                   class={`absolute top-0 h-[60%] bg-black border-x border-b border-gray-800 rounded-b-md z-20 cursor-pointer transition-transform origin-top flex flex-col justify-end items-center pb-2 ${
-                    activeKeys().has(item.note) ? 'bg-gray-800 scale-y-[0.98]' : 'shadow-lg'
+                    isActive() ? 'bg-gray-800 scale-y-[0.98]' : 'shadow-lg'
                   }`}
-                  style={{ left: left, width: `${finalWidth}%` }}
+                  style={{
+                    left: left,
+                    width: `${finalWidth}%`,
+                    ...(color
+                      ? {
+                          'background-color': color,
+                          'border-color': 'rgba(0,0,0,0.3)', // keep slight border
+                          filter: isActive() ? 'brightness(1.2)' : 'brightness(0.9)', // Darker than white keys by default if colored
+                        }
+                      : {}),
+                  }}
                   onMouseDown={() => handleNoteStart(item.note)}
                   onMouseUp={() => handleNoteEnd(item.note)}
                   onMouseLeave={() => handleNoteEnd(item.note)}
@@ -335,12 +352,16 @@ const Piano: Component = () => {
                   }}
                 >
                   {settings.showNotes && (
-                    <span class="text-[8px] sm:text-[9px] font-bold text-gray-300 mb-0.5 truncate w-full text-center">
+                    <span
+                      class={`text-[8px] sm:text-[9px] font-bold mb-0.5 truncate w-full text-center ${color ? 'text-white drop-shadow-sm' : 'text-gray-300'}`}
+                    >
                       {item.note}
                     </span>
                   )}
                   {showShortcuts() && (
-                    <span class="text-[8px] font-bold text-corvu-300 border border-gray-600 px-0.5 rounded bg-gray-900/80">
+                    <span
+                      class={`text-[8px] font-bold border px-0.5 rounded ${color ? 'text-white border-white/50 bg-black/20' : 'text-corvu-300 border-gray-600 bg-gray-900/80'}`}
+                    >
                       {getKeyLabel(item.note)}
                     </span>
                   )}
@@ -348,6 +369,27 @@ const Piano: Component = () => {
               );
             }}
           </For>
+        </div>
+
+        {/* Octave Controls */}
+        <div class="shrink-0 flex items-center justify-center gap-2">
+          <button
+            class="p-2 text-gray-400 hover:text-white hover:bg-gray-800 rounded-lg transition-colors disabled:opacity-30 cursor-pointer"
+            onClick={() => setSettings('baseOctave', Math.max(settings.baseOctave - 1, 1))}
+            disabled={settings.baseOctave <= 1}
+          >
+            ◀
+          </button>
+          <span class="font-mono font-bold text-xs text-gray-500 text-center uppercase tracking-wider min-w-[3rem]">
+            Oct {settings.baseOctave}
+          </span>
+          <button
+            class="p-2 text-gray-400 hover:text-white hover:bg-gray-800 rounded-lg transition-colors disabled:opacity-30 cursor-pointer"
+            onClick={() => setSettings('baseOctave', Math.min(settings.baseOctave + 1, 7))}
+            disabled={settings.baseOctave >= 7}
+          >
+            ▶
+          </button>
         </div>
       </div>
     </div>

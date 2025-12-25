@@ -1,5 +1,6 @@
 import { Show, createSignal, onCleanup, onMount, type Component } from 'solid-js';
 
+import ChartDisplay from './components/Chart';
 import Piano from './components/Piano';
 import SettingsDrawer from './components/SettingsDrawer';
 
@@ -44,17 +45,25 @@ const App: Component = () => {
   });
 
   return (
-    <div class="min-h-[100dvh] max-h-[100dvh] w-full max-w-full flex flex-col items-center justify-center gap-4 px-3 sm:px-4 py-3 sm:py-4 bg-corvu-bg overflow-hidden">
+    <div class="min-h-[100dvh] max-h-[100dvh] w-full max-w-full flex flex-col items-center justify-start gap-3 px-3 sm:px-4 py-3 sm:py-4 bg-corvu-bg overflow-hidden">
       <Show when={showRotateHint()}>
         <div class="pointer-events-none fixed top-3 left-1/2 -translate-x-1/2 z-[60] rounded-full bg-gray-900/90 px-4 py-2 text-xs font-semibold text-white shadow-lg">
           Rotate your phone for the best experience
         </div>
       </Show>
 
-      <Piano />
+      {/* Main content should flex to available height; chart and piano split 50-50 */}
+      <div class="w-full flex-1 min-h-0 flex flex-col items-center gap-3">
+        <div class="w-full flex-1 min-h-0 flex flex-col">
+          <ChartDisplay />
+        </div>
+        <div class="w-full flex-1 min-h-0 flex flex-col">
+          <Piano />
+        </div>
+      </div>
       <SettingsDrawer />
 
-      <div class="text-center text-sm text-gray-500">
+      <div class="shrink-0 text-center text-sm text-gray-500">
         <p>Press the keys on your keyboard or click/touch to play.</p>
         <p class="mt-1 text-[11px] text-gray-400 font-mono">
           v{__APP_VERSION__} ({__GIT_SHA__})

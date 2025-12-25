@@ -1,4 +1,4 @@
-import { settings } from '../store';
+import { settings } from '@lib/store';
 
 let audioCtx: AudioContext | null = null;
 

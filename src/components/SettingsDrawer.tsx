@@ -9,7 +9,7 @@ import {
   type Component,
 } from 'solid-js';
 
-import { setSettings, settings, type Waveform } from '../store';
+import { setSettings, settings, type Waveform, type ChartType } from '@lib/store';
 
 // Chrome/Edge on desktop + Android fire `beforeinstallprompt`.
 // Safari/iOS does not, so we show an "Add to Home Screen" hint there.
@@ -26,13 +26,13 @@ const SettingsDrawer: Component = () => {
 
   const handleInstallClick = async () => {
     const evt = deferredPrompt();
-    
+
     if (!evt) {
       return;
     }
-    
+
     await evt.prompt();
-    
+
     // Regardless of outcome, browsers only allow prompting once per event.
     // We'll clear it and let the browser re-emit later if still eligible.
     try {
@@ -47,12 +47,12 @@ const SettingsDrawer: Component = () => {
     const installed =
       window.matchMedia?.('(display-mode: standalone)')?.matches === true ||
       nav.standalone === true;
-    
+
     setIsInstalled(installed);
 
     const ua = navigator.userAgent || '';
     const isIOS = /iphone|ipad|ipod/i.test(ua);
-    
+
     setShowIosA2hsHint(isIOS && !installed);
 
     const onBeforeInstallPrompt = (e: Event) => {
@@ -60,7 +60,7 @@ const SettingsDrawer: Component = () => {
       e.preventDefault();
       setDeferredPrompt(e as BeforeInstallPromptEvent);
     };
-    
+
     const onAppInstalled = () => {
       setIsInstalled(true);
       setDeferredPrompt(null);
@@ -69,7 +69,7 @@ const SettingsDrawer: Component = () => {
 
     window.addEventListener('beforeinstallprompt', onBeforeInstallPrompt);
     window.addEventListener('appinstalled', onAppInstalled);
-    
+
     onCleanup(() => {
       window.removeEventListener('beforeinstallprompt', onBeforeInstallPrompt);
       window.removeEventListener('appinstalled', onAppInstalled);
@@ -79,21 +79,21 @@ const SettingsDrawer: Component = () => {
   // Desktop = fine pointer (mouse/trackpad). This avoids "sm/lg" width false-positives on phones in landscape.
   onMount(() => {
     const mql = window.matchMedia?.('(pointer: fine)');
-    
+
     if (!mql) {
       return;
     }
-    
+
     const update = () => setDesktopCapable(mql.matches);
-    
+
     update();
-    
+
     if (mql.addEventListener) {
       mql.addEventListener('change', update);
     } else {
       mql.addListener(update);
     }
-    
+
     onCleanup(() => {
       if (mql.removeEventListener) {
         mql.removeEventListener('change', update);
@@ -141,7 +141,7 @@ const SettingsDrawer: Component = () => {
                 'background-color': `rgb(0 0 0 / ${0.5 * props.openPercentage})`,
               }}
             />
-            <Drawer.Content class="fixed inset-x-0 bottom-0 z-50 flex h-full max-h-[500px] flex-col rounded-t-2xl border-t-4 border-corvu-400 bg-corvu-100 pt-3 transition-transform duration-500 after:absolute after:inset-x-0 after:top-full after:h-1/2 after:bg-inherit md:select-none">
+            <Drawer.Content class="fixed inset-x-0 bottom-0 z-50 flex h-full max-h-[600px] flex-col rounded-t-2xl border-t-4 border-corvu-400 bg-corvu-100 pt-3 transition-transform duration-500 after:absolute after:inset-x-0 after:top-full after:h-1/2 after:bg-inherit md:select-none">
               <div class="h-1 w-12 self-center rounded-full bg-corvu-400/50 mb-6" />
 
               <div class="px-6 space-y-8 overflow-y-auto pb-8">
@@ -193,6 +193,45 @@ const SettingsDrawer: Component = () => {
                       onInput={(e) => setSettings('volume', parseFloat(e.currentTarget.value))}
                       class="w-full h-2 bg-corvu-200 rounded-lg appearance-none cursor-pointer accent-corvu-400"
                     />
+                  </div>
+                </div>
+
+                {/* Charts & Colors Section */}
+                <div class="space-y-4">
+                  <h3 class="text-lg font-bold text-corvu-text border-b border-corvu-300 pb-1">
+                    Charts & Colors
+                  </h3>
+
+                  <div class="space-y-2">
+                    <h3 class="font-semibold text-corvu-text text-sm">Chart View</h3>
+                    <div class="flex gap-2 p-1 bg-gray-200 rounded-lg">
+                      <For each={['bar', 'sheet'] as ChartType[]}>
+                        {(type) => (
+                          <button
+                            class={`flex-1 py-1.5 rounded-md text-sm font-medium transition-all ${
+                              settings.chartType === type
+                                ? 'bg-white text-corvu-text shadow-sm'
+                                : 'text-gray-500 hover:text-gray-700'
+                            }`}
+                            onClick={() => setSettings('chartType', type)}
+                          >
+                            {type === 'bar' ? 'Bar Chart' : 'Sheet Music'}
+                          </button>
+                        )}
+                      </For>
+                    </div>
+                  </div>
+
+                  <div class="space-y-3 pt-2">
+                    <label class="flex items-center justify-between cursor-pointer">
+                      <span class="font-semibold text-corvu-text text-sm">Color Piano Keys</span>
+                      <input
+                        type="checkbox"
+                        checked={settings.showKeyColors}
+                        onChange={(e) => setSettings('showKeyColors', e.currentTarget.checked)}
+                        class="w-5 h-5 rounded border-corvu-300 text-corvu-400 focus:ring-corvu-400"
+                      />
+                    </label>
                   </div>
                 </div>
 
