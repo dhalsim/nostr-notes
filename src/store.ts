@@ -13,10 +13,12 @@ interface Settings {
   baseOctave: number; // e.g., 3, 4, 5
   chartType: ChartType;
   showKeyColors: boolean;
+  showOctaveControls: boolean;
+  showInstructions: boolean;
   noteColors: Record<string, string>;
 }
 
-const SETTINGS_VERSION = 2;
+const SETTINGS_VERSION = 3;
 const STORAGE_KEY = 'solid-piano-settings';
 
 export const DEFAULT_NOTE_COLORS: Record<string, string> = {
@@ -29,6 +31,18 @@ export const DEFAULT_NOTE_COLORS: Record<string, string> = {
   B: '#ec4899', // Pink (Si)
 };
 
+const isDesktopLikeDevice = () => {
+  if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') {
+    return true;
+  }
+
+  try {
+    return !window.matchMedia('(pointer: coarse)').matches;
+  } catch {
+    return true;
+  }
+};
+
 const DEFAULT_SETTINGS: Settings = {
   waveform: 'triangle',
   volume: 0.5,
@@ -38,6 +52,8 @@ const DEFAULT_SETTINGS: Settings = {
   baseOctave: 4,
   chartType: 'bar',
   showKeyColors: true,
+  showOctaveControls: isDesktopLikeDevice(),
+  showInstructions: true,
   noteColors: DEFAULT_NOTE_COLORS,
 };
 

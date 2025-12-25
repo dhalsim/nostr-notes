@@ -31,7 +31,7 @@ export const DEMO_MELODY: NoteEvent[] = [
 
 const ChartDisplay = () => {
   return (
-    <div class="w-full h-full flex-1 bg-white/50 backdrop-blur-sm rounded-lg p-2 shadow-sm border border-white/20 overflow-hidden flex flex-col">
+    <div class="w-full h-full flex-1 bg-white/50 backdrop-blur-sm rounded-lg shadow-sm border border-white/20 overflow-hidden flex flex-col">
       <div class="w-full flex-1 min-h-0 overflow-x-auto flex">
         <Show when={settings.chartType === 'bar'}>
           <BarChart melody={DEMO_MELODY} />

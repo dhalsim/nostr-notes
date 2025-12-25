@@ -1,4 +1,4 @@
-import { For, createMemo, createSignal, onCleanup, onMount } from 'solid-js';
+import { For, Show, createMemo, createSignal, onCleanup, onMount } from 'solid-js';
 import type { Component } from 'solid-js';
 
 import { playNote, stopNote } from '@lib/audio/audioEngine';
@@ -249,10 +249,14 @@ const Piano: Component = () => {
   const totalWhiteKeys = () => keys().whiteKeys.length;
   const whiteKeyWidth = () => 100 / totalWhiteKeys(); // percent
   const showShortcuts = () => settings.showShortcuts && desktopCapable();
+  const shouldShowOctaveControls = () => settings.showOctaveControls && desktopCapable();
 
   return (
     <div class="flex flex-col items-center gap-3 w-full max-w-full relative flex-1 min-h-0">
-      <div class="relative w-full flex-1 min-h-0 max-h-[520px] select-none bg-gray-900 pt-2 px-2 sm:pt-3 sm:px-3 rounded-xl shadow-2xl overflow-hidden z-10 flex flex-col gap-0">
+      <div
+        class="relative w-full flex-1 min-h-0 max-h-[520px] select-none bg-gray-900 pt-2 px-2 sm:pt-3 sm:px-3 rounded-xl shadow-2xl overflow-hidden z-10 flex flex-col gap-0"
+        classList={{ 'pb-3': !shouldShowOctaveControls() }}
+      >
         {/* Keys Container */}
         <div class="relative w-full flex-1 min-h-0 flex items-stretch">
           {/* White Keys */}
@@ -394,25 +398,35 @@ const Piano: Component = () => {
         </div>
 
         {/* Octave Controls */}
-        <div class="shrink-0 flex items-center justify-center gap-2">
-          <button
-            class="p-2 text-gray-400 hover:text-white hover:bg-gray-800 rounded-lg transition-colors disabled:opacity-30 cursor-pointer"
-            onClick={() => setSettings('baseOctave', Math.max(settings.baseOctave - 1, 1))}
-            disabled={settings.baseOctave <= 1}
-          >
-            ◀
-          </button>
-          <span class="font-mono font-bold text-xs text-gray-500 text-center uppercase tracking-wider min-w-[3rem]">
-            Oct {settings.baseOctave}
-          </span>
-          <button
-            class="p-2 text-gray-400 hover:text-white hover:bg-gray-800 rounded-lg transition-colors disabled:opacity-30 cursor-pointer"
-            onClick={() => setSettings('baseOctave', Math.min(settings.baseOctave + 1, 7))}
-            disabled={settings.baseOctave >= 7}
-          >
-            ▶
-          </button>
-        </div>
+        <Show when={shouldShowOctaveControls()}>
+          <div class="shrink-0 flex items-center justify-center gap-2">
+            <button
+              class="p-2 text-gray-400 hover:text-white hover:bg-gray-800 rounded-lg transition-colors disabled:opacity-30 cursor-pointer"
+              onClick={() => setSettings('baseOctave', Math.max(settings.baseOctave - 1, 1))}
+              disabled={settings.baseOctave <= 1}
+            >
+              ◀
+            </button>
+            <span class="font-mono font-bold text-xs text-gray-500 text-center uppercase tracking-wider min-w-[3rem]">
+              Oct {settings.baseOctave}
+            </span>
+            <button
+              class="p-2 text-gray-400 hover:text-white hover:bg-gray-800 rounded-lg transition-colors disabled:opacity-30 cursor-pointer"
+              onClick={() => setSettings('baseOctave', Math.min(settings.baseOctave + 1, 7))}
+              disabled={settings.baseOctave >= 7}
+            >
+              ▶
+            </button>
+            <button
+              class="ml-3 text-gray-500 hover:text-white transition-colors text-sm"
+              aria-label="Hide octave controls"
+              title="Hide octave controls"
+              onClick={() => setSettings('showOctaveControls', false)}
+            >
+              ×
+            </button>
+          </div>
+        </Show>
       </div>
     </div>
   );

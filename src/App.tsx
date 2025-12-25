@@ -1,3 +1,4 @@
+import Dialog from '@corvu/dialog';
 import { Show, createSignal, onCleanup, onMount, type Component } from 'solid-js';
 
 import { toggle } from '@lib/audio/playbackEngine';
@@ -5,6 +6,7 @@ import { toggle } from '@lib/audio/playbackEngine';
 import ChartDisplay, { DEMO_MELODY } from './components/Chart';
 import Piano from './components/Piano';
 import SettingsDrawer from './components/SettingsDrawer';
+import { setSettings, settings } from './store';
 
 const App: Component = () => {
   const [showRotateHint, setShowRotateHint] = createSignal(false);
@@ -78,16 +80,63 @@ const App: Component = () => {
           <Piano />
         </div>
       </div>
+      <InstructionsDialog
+        open={settings.showInstructions}
+        onOpenChange={(open) => {
+          if (!open) {
+            setSettings('showInstructions', false);
+          }
+        }}
+      />
       <SettingsDrawer />
-
-      <div class="shrink-0 text-center text-sm text-gray-500">
-        <p>Press the keys on your keyboard or click/touch to play. Press Space key to play the song.</p>
-        <p class="mt-1 text-[11px] text-gray-400 font-mono">
-          v{__APP_VERSION__} ({__GIT_SHA__})
-        </p>
-      </div>
     </div>
   );
 };
 
 export default App;
+
+interface InstructionsDialogProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+}
+
+const InstructionsDialog = (props: InstructionsDialogProps) => {
+  return (
+    <Dialog open={props.open} onOpenChange={props.onOpenChange}>
+      {() => (
+        <>
+          <Dialog.Portal>
+            <Dialog.Overlay class="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm" />
+            <Dialog.Content class="fixed inset-0 z-50 flex items-center justify-center px-4">
+              <div class="w-full max-w-md rounded-2xl bg-white/95 p-6 shadow-2xl border border-gray-200">
+                <div class="flex items-center justify-between">
+                  <h2 class="text-lg font-semibold text-gray-800">How to Play</h2>
+                  <button
+                    class="text-gray-500 hover:text-gray-800 transition-colors"
+                    onClick={() => props.onOpenChange(false)}
+                    aria-label="Close instructions"
+                  >
+                    ×
+                  </button>
+                </div>
+                <p class="mt-4 text-sm text-gray-600">
+                  Press the keys on your keyboard or click/touch the piano to play. Press the Space key to play or pause
+                  the demo song.
+                </p>
+                <p class="mt-3 text-xs text-gray-400 font-mono">
+                  v{__APP_VERSION__} ({__GIT_SHA__})
+                </p>
+                <button
+                  class="mt-6 w-full rounded-lg bg-gray-900/90 text-white py-2 text-sm font-medium hover:bg-gray-800 transition-colors"
+                  onClick={() => props.onOpenChange(false)}
+                >
+                  Got it
+                </button>
+              </div>
+            </Dialog.Content>
+          </Dialog.Portal>
+        </>
+      )}
+    </Dialog>
+  );
+};

@@ -103,10 +103,15 @@ const SettingsDrawer: Component = () => {
     });
   });
 
-  // Keep UI consistent: shortcuts are desktop-only, so turn off the toggle on non-desktop devices.
+  // Keep UI consistent: desktop-only controls (shortcuts + octave buttons) should stay disabled on touch devices.
   createEffect(() => {
-    if (!desktopCapable() && settings.showShortcuts) {
-      setSettings('showShortcuts', false);
+    if (!desktopCapable()) {
+      if (settings.showShortcuts) {
+        setSettings('showShortcuts', false);
+      }
+      if (settings.showOctaveControls) {
+        setSettings('showOctaveControls', false);
+      }
     }
   });
 
@@ -117,7 +122,7 @@ const SettingsDrawer: Component = () => {
           <Drawer.Trigger
             aria-label="Settings"
             title="Settings"
-            class="fixed bottom-4 right-4 z-50 grid h-10 w-10 place-items-center rounded-full bg-gray-900/90 text-white transition-all hover:bg-gray-800 active:translate-y-0.5 shadow-lg ring-1 ring-white/10"
+            class="fixed top-4 right-4 z-50 grid h-10 w-10 place-items-center rounded-full bg-gray-900/90 text-white transition-all hover:bg-gray-800 active:translate-y-0.5 shadow-lg ring-1 ring-white/10"
           >
             <span class="sr-only">Settings</span>
             <svg
@@ -280,6 +285,26 @@ const SettingsDrawer: Component = () => {
                         type="checkbox"
                         checked={settings.showNotes}
                         onChange={(e) => setSettings('showNotes', e.currentTarget.checked)}
+                        class="w-5 h-5 rounded border-corvu-300 text-corvu-400 focus:ring-corvu-400"
+                      />
+                    </label>
+
+                    <label
+                      class={`flex items-center justify-between ${
+                        desktopCapable() ? 'cursor-pointer' : 'cursor-not-allowed opacity-60'
+                      }`}
+                    >
+                      <span class="font-semibold text-corvu-text text-sm">
+                        Show Octave Controls
+                        <Show when={!desktopCapable()}>
+                          <span class="ml-2 text-xs font-normal text-gray-500">(desktop only)</span>
+                        </Show>
+                      </span>
+                      <input
+                        type="checkbox"
+                        checked={settings.showOctaveControls}
+                        onChange={(e) => setSettings('showOctaveControls', e.currentTarget.checked)}
+                        disabled={!desktopCapable()}
                         class="w-5 h-5 rounded border-corvu-300 text-corvu-400 focus:ring-corvu-400"
                       />
                     </label>
