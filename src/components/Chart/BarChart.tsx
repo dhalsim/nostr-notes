@@ -1,17 +1,20 @@
-import { For, createMemo } from 'solid-js';
+import { For, createEffect, createMemo } from 'solid-js';
 
-import { toggle } from '@lib/audio/playbackEngine';
-import { playback } from '@lib/playbackStore';
+import { seek } from '@lib/audio/playbackEngine';
+import { playback, setPlayback } from '@lib/playbackStore';
 import { settings } from '@lib/store';
 import { getNoteColor, getSolfege } from '@lib/utils/musicUtils';
 
-import type { NoteEvent } from './index';
+import { createPanAndSeek } from './panUtils';
+import { PlayheadControls } from './PlayheadControls';
+import type { Melody, NoteEvent } from './index';
 
 interface BarChartProps {
-  melody: NoteEvent[];
+  melody: Melody;
 }
 
 const BarChart = (props: BarChartProps) => {
+
   const BAR_WIDTH_UNIT = 60; // px per duration unit
   const BAR_GAP = 6;
   const BAR_HEIGHT = 10;
@@ -44,7 +47,7 @@ const BarChart = (props: BarChartProps) => {
   // Precompute X positions based on duration (timeline), not index.
   const timeline = createMemo(() => {
     let cursorX = START_X;
-    const computed = props.melody.map((item) => {
+    const computed = props.melody.notes.map((item) => {
       const x = cursorX;
       // Use grid-based width: occupy the full slot minus gap
       const w = item.duration * BAR_WIDTH_UNIT - BAR_GAP;
@@ -60,17 +63,35 @@ const BarChart = (props: BarChartProps) => {
   const items = () => timeline().items;
   const svgWidth = () => timeline().width;
 
+  const isSameNotes = (a: NoteEvent[], b: NoteEvent[]) => {
+    if (a.length !== b.length) return false;
+    for (let i = 0; i < a.length; i += 1) {
+      if (a[i].note !== b[i].note || a[i].duration !== b[i].duration) return false;
+    }
+    return true;
+  };
+
+  // Hydrate playback melody so seek works before play
+  createEffect(() => {
+    const notes = props.melody.notes;
+    if (!isSameNotes(notes, playback.melody)) {
+      setPlayback('melody', notes);
+      setPlayback('currentNoteIndex', -1);
+      setPlayback('lastCompletedNoteIndex', -1);
+    }
+  });
+
   const currentNoteDurationMs = createMemo(() => {
     if (!playback.isPlaying) {
       return 0;
     }
     const idx = playback.currentNoteIndex;
-    if (idx < 0 || idx >= props.melody.length) {
+    if (idx < 0 || idx >= props.melody.notes.length) {
       return 0;
     }
 
-    const note = props.melody[idx];
-    const msPerBeat = 60000 / playback.tempo;
+    const note = props.melody.notes[idx];
+    const msPerBeat = 60000 / settings.tempo;
     return note.duration * msPerBeat;
   });
 
@@ -99,50 +120,64 @@ const BarChart = (props: BarChartProps) => {
     return Math.max(0, offset);
   });
 
-  const scrollStyle = createMemo(() => {
-    const duration = playback.isPlaying ? Math.max(120, currentNoteDurationMs()) : 200;
-    const easing = playback.isPlaying ? 'linear' : 'ease-out';
+  // Calculate measure lines
+  const measureLines = createMemo(() => {
+    if (!props.melody.ratio) return [];
 
-    return {
-      transform: `translateX(-${scrollOffset()}px)`,
-      transition: `transform ${duration}ms ${easing}`,
-    };
+    const [beatsPerMeasure, beatNoteValue] = props.melody.ratio;
+    const measureDuration = beatsPerMeasure * (4 / beatNoteValue);
+
+    const width = svgWidth();
+    const lines: number[] = [];
+    const totalDuration = props.melody.notes.reduce((acc, note) => acc + note.duration, 0);
+    const totalMeasures = Math.ceil(totalDuration / measureDuration);
+
+    for (let i = 1; i <= totalMeasures; i++) {
+      const x = START_X + (i * measureDuration * BAR_WIDTH_UNIT);
+      if (x < width) {
+        lines.push(x);
+      }
+    }
+    return lines;
+  });
+
+  const {
+    manualOffset,
+    activeOffset,
+    scrollStyle,
+    handleWheel,
+    handlePointerDown,
+    handlePointerMove,
+    handlePointerUp,
+    handlePointerCancel,
+    setManualOffset,
+  } = createPanAndSeek({
+    playheadX: PLAYHEAD_X,
+    gap: BAR_GAP,
+    getTimeline: timeline,
+    scrollOffset,
+    isPlaying: () => playback.isPlaying,
+    currentNoteDurationMs,
+    onSeek: seek,
+    ignorePointerDown: (e) => !!(e.target instanceof HTMLElement && e.target.closest('button')),
   });
 
   return (
-    <div class="flex-1 min-w-max bg-white rounded-md shadow-inner p-1 relative overflow-hidden">
-      {/* Playhead line - fixed position */}
-      <div
-        class="absolute inset-y-3 w-0.5 bg-red-500 z-20 flex flex-col justify-end items-center"
-        style={{ left: `${PLAYHEAD_X}px` }}
-      >
-        <div class="absolute -left-[1px] inset-y-0 w-1 bg-red-400/70 blur-sm pointer-events-none" />
-        
-        {/* Play/Pause Button */}
-        <button
-          class="relative translate-y-1/2 w-6 h-6 rounded-full bg-red-500 hover:bg-red-600 text-white flex items-center justify-center shadow-md transition-transform hover:scale-110 active:scale-95 z-30 cursor-pointer"
-          onClick={(e) => {
-            e.stopPropagation();
-            toggle(props.melody);
-          }}
-          title={playback.isPlaying ? 'Pause' : 'Play'}
-        >
-          <div class="pointer-events-none">
-            {playback.isPlaying ? (
-              // Pause Icon
-              <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor">
-                <rect x="6" y="4" width="4" height="16" rx="1" />
-                <rect x="14" y="4" width="4" height="16" rx="1" />
-              </svg>
-            ) : (
-              // Play Icon
-              <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M8 5v14l11-7z" />
-              </svg>
-            )}
-          </div>
-        </button>
-      </div>
+    <div
+      class="flex-1 min-w-max bg-white rounded-md shadow-inner p-1 relative overflow-hidden"
+      onWheel={(e) => handleWheel(e)}
+      onPointerDown={handlePointerDown}
+      onPointerMove={handlePointerMove}
+      onPointerUp={handlePointerUp}
+      onPointerCancel={handlePointerCancel}
+      style={{ 'touch-action': 'none' }}
+    >
+      {/* Playhead Controls */}
+      <PlayheadControls
+        x={PLAYHEAD_X}
+        melodyNotes={props.melody.notes}
+        onRewind={() => setManualOffset(0)}
+      />
 
       {/* Scrollable content */}
       <div class="relative w-full h-full">
@@ -164,6 +199,21 @@ const BarChart = (props: BarChartProps) => {
                   y2={STAFF_BASE_Y - i * STAFF_LINE_SPACING}
                   stroke="#c7c7c7"
                   stroke-width="1"
+                />
+              )}
+            </For>
+
+            {/* Measure Lines */}
+            <For each={measureLines()}>
+              {(x) => (
+                <line
+                  x1={x}
+                  y1={0}
+                  x2={x}
+                  y2="100%"
+                  stroke="#ccc"
+                  stroke-width="2"
+                  stroke-dasharray="4 4"
                 />
               )}
             </For>

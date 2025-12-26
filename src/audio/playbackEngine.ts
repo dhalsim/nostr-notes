@@ -1,5 +1,6 @@
-import type { NoteEvent } from '@lib/components/Chart';
+import type { Melody, NoteEvent } from '@lib/components/Chart';
 import { playback, setPlayback } from '@lib/playbackStore';
+import { setSettings, settings } from '@lib/store';
 
 import { playNote, stopNote } from './audioEngine';
 
@@ -32,11 +33,26 @@ function getNoteDurationMs(duration: number, tempo: number): number {
  * Schedules and plays notes sequentially
  */
 function scheduleNextNote(noteIndex: number): void {
-  const { melody, tempo, isPlaying } = playback;
+  const { melody, isPlaying, startAfterTs } = playback;
+  const { tempo } = settings;
 
   // Stop if not playing
   if (!isPlaying) {
     return;
+  }
+
+  // If we have a delayed start, wait until the target timestamp before playing
+  if (startAfterTs) {
+    const now = Date.now();
+    const remaining = startAfterTs - now;
+    if (remaining > 0) {
+      playbackTimeoutId = setTimeout(() => {
+        scheduleNextNote(noteIndex);
+      }, remaining);
+      return;
+    }
+    // Delay elapsed, clear it
+    setPlayback('startAfterTs', null);
   }
 
   // Stop if reached end
@@ -75,10 +91,12 @@ function scheduleNextNote(noteIndex: number): void {
 /**
  * Start or resume playback
  */
-export function play(melody?: NoteEvent[]): void {
+export function play(input?: Melody | NoteEvent[]): void {
+  const melodyNotes = Array.isArray(input) ? input : input?.notes;
+
   // If melody is provided, set it. Only reset if it's truly a new melody.
-  if (melody && !isSameMelody(melody, playback.melody)) {
-    setPlayback('melody', melody);
+  if (melodyNotes && !isSameMelody(melodyNotes, playback.melody)) {
+    setPlayback('melody', melodyNotes);
     setPlayback('currentNoteIndex', -1);
     setPlayback('lastCompletedNoteIndex', -1);
   }
@@ -87,6 +105,9 @@ export function play(melody?: NoteEvent[]): void {
   if (playback.melody.length === 0) {
     return;
   }
+
+  // Clear any pending delayed start unless explicitly set via seek
+  setPlayback('startAfterTs', null);
 
   setPlayback('isPlaying', true);
 
@@ -134,7 +155,7 @@ export function stop(): void {
 /**
  * Toggle between play and pause
  */
-export function toggle(melody?: NoteEvent[]): void {
+export function toggle(melody?: Melody | NoteEvent[]): void {
   if (playback.isPlaying) {
     pause();
   } else {
@@ -146,13 +167,13 @@ export function toggle(melody?: NoteEvent[]): void {
  * Set the tempo (BPM)
  */
 export function setTempo(tempo: number): void {
-  setPlayback('tempo', Math.max(20, Math.min(300, tempo)));
+  setSettings('tempo', Math.max(20, Math.min(300, tempo)));
 }
 
 /**
  * Seek to a specific note index
  */
-export function seek(noteIndex: number): void {
+export function seek(noteIndex: number, delayMs: number = 0): void {
   const wasPlaying = playback.isPlaying;
 
   // Stop current playback
@@ -170,6 +191,7 @@ export function seek(noteIndex: number): void {
   const clampedIndex = Math.max(-1, Math.min(noteIndex, playback.melody.length - 1));
   setPlayback('currentNoteIndex', clampedIndex);
   setPlayback('lastCompletedNoteIndex', Math.max(-1, clampedIndex - 1));
+  setPlayback('startAfterTs', delayMs > 0 ? Date.now() + delayMs : null);
 
   // Resume if was playing
   if (wasPlaying && clampedIndex >= 0) {

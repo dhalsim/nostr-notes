@@ -16,9 +16,10 @@ interface Settings {
   showOctaveControls: boolean;
   showInstructions: boolean;
   noteColors: Record<string, string>;
+  tempo: number;
 }
 
-const SETTINGS_VERSION = 3;
+const SETTINGS_VERSION = 4;
 const STORAGE_KEY = 'solid-piano-settings';
 
 export const DEFAULT_NOTE_COLORS: Record<string, string> = {
@@ -55,6 +56,7 @@ const DEFAULT_SETTINGS: Settings = {
   showOctaveControls: isDesktopLikeDevice(),
   showInstructions: true,
   noteColors: DEFAULT_NOTE_COLORS,
+  tempo: 120,
 };
 
 // Load from LocalStorage

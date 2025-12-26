@@ -14,7 +14,8 @@ const App: Component = () => {
   onMount(() => {
     // Keyboard shortcut: Space to toggle playback
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Space' && !e.repeat) {
+      // Prefer e.code for space; e.key is usually ' ' (space character), not 'Space'
+      if ((e.code === 'Space' || e.key === ' ') && !e.repeat) {
         // Don't trigger if user is typing in an input
         if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) {
           return;

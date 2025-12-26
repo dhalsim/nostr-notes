@@ -181,6 +181,25 @@ const SettingsDrawer: Component = () => {
                     </div>
                   </div>
 
+                  {/* Tempo Control */}
+                  <div class="space-y-2">
+                    <div class="flex justify-between">
+                      <h3 class="font-semibold text-corvu-text text-sm">Tempo (BPM)</h3>
+                      <span class="text-sm text-gray-500">
+                        {settings.tempo}
+                      </span>
+                    </div>
+                    <input
+                      type="range"
+                      min="20"
+                      max="300"
+                      step="1"
+                      value={settings.tempo}
+                      onInput={(e) => setSettings('tempo', parseInt(e.currentTarget.value))}
+                      class="w-full h-2 bg-corvu-200 rounded-lg appearance-none cursor-pointer accent-corvu-400"
+                    />
+                  </div>
+
                   {/* Volume Slider */}
                   <div class="space-y-2">
                     <div class="flex justify-between">

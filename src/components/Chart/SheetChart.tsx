@@ -1,14 +1,16 @@
-import { For, createMemo } from 'solid-js';
+import { For, createEffect, createMemo } from 'solid-js';
 
-import { toggle } from '@lib/audio/playbackEngine';
-import { playback } from '@lib/playbackStore';
+import { seek } from '@lib/audio/playbackEngine';
+import { playback, setPlayback } from '@lib/playbackStore';
 import { settings } from '@lib/store';
 import { getNoteColor } from '@lib/utils/musicUtils';
 
-import type { NoteEvent } from './index';
+import { createPanAndSeek } from './panUtils';
+import { PlayheadControls } from './PlayheadControls';
+import type { Melody, NoteEvent } from './index';
 
 interface SheetChartProps {
-  melody: NoteEvent[];
+  melody: Melody;
 }
 
 const SheetChart = (props: SheetChartProps) => {
@@ -45,8 +47,8 @@ const SheetChart = (props: SheetChartProps) => {
 
   // Precompute X positions based on duration (timeline)
   const timeline = createMemo(() => {
-    let cursorX = START_X;
-    const computed = props.melody.map((item) => {
+    let cursorX = START_X + 8;
+    const computed = props.melody.notes.map((item) => {
       const x = cursorX;
       // Use proportional spacing: duration * spacing unit
       // This ensures constant scroll speed (pixels per beat is constant)
@@ -63,18 +65,36 @@ const SheetChart = (props: SheetChartProps) => {
   const items = () => timeline().items;
   const svgWidth = () => timeline().width;
 
+  const isSameNotes = (a: NoteEvent[], b: NoteEvent[]) => {
+    if (a.length !== b.length) return false;
+    for (let i = 0; i < a.length; i += 1) {
+      if (a[i].note !== b[i].note || a[i].duration !== b[i].duration) return false;
+    }
+    return true;
+  };
+
+  // Ensure playback store has the melody even before first play (needed for seek-on-scroll)
+  createEffect(() => {
+    const notes = props.melody.notes;
+    if (!isSameNotes(notes, playback.melody)) {
+      setPlayback('melody', notes);
+      setPlayback('currentNoteIndex', -1);
+      setPlayback('lastCompletedNoteIndex', -1);
+    }
+  });
+
   const currentNoteDurationMs = createMemo(() => {
     if (!playback.isPlaying) {
       return 0;
     }
 
     const idx = playback.currentNoteIndex;
-    if (idx < 0 || idx >= props.melody.length) {
+    if (idx < 0 || idx >= props.melody.notes.length) {
       return 0;
     }
 
-    const note = props.melody[idx];
-    const msPerBeat = 60000 / playback.tempo;
+    const note = props.melody.notes[idx];
+    const msPerBeat = 60000 / settings.tempo;
     return note.duration * msPerBeat;
   });
 
@@ -102,50 +122,99 @@ const SheetChart = (props: SheetChartProps) => {
     return Math.max(0, offset);
   });
 
-  const scrollStyle = createMemo(() => {
-    const duration = playback.isPlaying ? Math.max(120, currentNoteDurationMs()) : 200;
-    const easing = playback.isPlaying ? 'linear' : 'ease-out';
+  // Calculate measure lines
+  const measureLines = createMemo(() => {
+    if (!props.melody.ratio) return [];
 
-    return {
-      transform: `translateX(-${scrollOffset()}px)`,
-      transition: `transform ${duration}ms ${easing}`,
-    };
+    const [beatsPerMeasure, beatNoteValue] = props.melody.ratio;
+    // Calculate measure duration in relative duration units (assuming 1 = quarter note)
+    // Formula: beatsPerMeasure * (4 / beatNoteValue)
+    // e.g. 4/4 -> 4 * (4/4) = 4 units
+    // e.g. 6/8 -> 6 * (4/8) = 3 units (if 1 unit = quarter note)
+    const measureDuration = beatsPerMeasure * (4 / beatNoteValue);
+    
+    // We need to cover the entire timeline width
+    const width = svgWidth();
+    const lines: number[] = [];
+    
+    // Calculate total duration to know how far to draw
+    const totalDuration = props.melody.notes.reduce((acc, note) => acc + note.duration, 0);
+    const totalMeasures = Math.ceil(totalDuration / measureDuration);
+
+    for (let i = 1; i <= totalMeasures; i++) {
+      // Each measure starts at START_X + cumulative duration * spacing
+      const x = START_X + (i * measureDuration * NOTE_SPACING);
+      if (x < width) {
+        lines.push(x);
+      }
+    }
+    
+    return lines;
   });
 
+  // Find the note index at a given offset (playhead position)
+  const findNoteAtOffset = (offset: number): number => {
+    const playheadPosition = offset + PLAYHEAD_X;
+    const timelineItems = timeline().items;
+    let foundIndex = -1;
+
+    for (let i = 0; i < timelineItems.length; i++) {
+      if (timelineItems[i].x <= playheadPosition) {
+        foundIndex = i;
+      } else {
+        break;
+      }
+    }
+
+    return foundIndex;
+  };
+
+  // Calculate max scroll offset
+  const maxOffset = createMemo(() => {
+    const timelineItems = timeline().items;
+    if (timelineItems.length === 0) return 0;
+    const last = timelineItems[timelineItems.length - 1];
+    return Math.max(0, last.x + last.w - PLAYHEAD_X);
+  });
+
+  const {
+    manualOffset,
+    activeOffset,
+    scrollStyle,
+    handleWheel,
+    handlePointerDown,
+    handlePointerMove,
+    handlePointerUp,
+    handlePointerCancel,
+    setManualOffset,
+  } = createPanAndSeek({
+    playheadX: PLAYHEAD_X,
+    gap: 0,
+    getTimeline: timeline,
+    scrollOffset,
+    isPlaying: () => playback.isPlaying,
+    currentNoteDurationMs,
+    onSeek: seek,
+    ignorePointerDown: (e) => !!(e.target instanceof HTMLElement && e.target.closest('button')),
+  });
+
+  // Attach wheel event listener with passive: false to allow preventDefault
   return (
-    <div class="flex-1 min-w-max bg-white rounded-md shadow-inner p-1 relative overflow-hidden">
-      {/* Playhead line - fixed position */}
-      <div
-        class="absolute inset-y-3 w-0.5 bg-red-500 z-20 flex flex-col justify-end items-center"
-        style={{ left: `${PLAYHEAD_X}px` }}
-      >
-        <div class="absolute -left-[1px] inset-y-0 w-1 bg-red-400/70 blur-sm pointer-events-none" />
-        
-        {/* Play/Pause Button */}
-        <button
-          class="relative translate-y-1/2 w-6 h-6 rounded-full bg-red-500 hover:bg-red-600 text-white flex items-center justify-center shadow-md transition-transform hover:scale-110 active:scale-95 z-30 cursor-pointer"
-          onClick={(e) => {
-            e.stopPropagation();
-            toggle(props.melody);
-          }}
-          title={playback.isPlaying ? 'Pause' : 'Play'}
-        >
-          <div class="pointer-events-none">
-            {playback.isPlaying ? (
-              // Pause Icon
-              <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor">
-                <rect x="6" y="4" width="4" height="16" rx="1" />
-                <rect x="14" y="4" width="4" height="16" rx="1" />
-              </svg>
-            ) : (
-              // Play Icon
-              <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M8 5v14l11-7z" />
-              </svg>
-            )}
-          </div>
-        </button>
-      </div>
+    <div
+      class="flex-1 min-w-max bg-white rounded-md shadow-inner p-1 relative overflow-hidden"
+      onWheel={(e) => handleWheel(e)}
+      onPointerDown={handlePointerDown}
+      onPointerMove={handlePointerMove}
+      onPointerUp={handlePointerUp}
+      onPointerCancel={handlePointerCancel}
+      style={{ 'touch-action': 'none' }}
+    >
+      {/* Playhead Controls */}
+      <PlayheadControls
+        x={PLAYHEAD_X}
+        melodyNotes={props.melody.notes}
+        onRewind={() => setManualOffset(0)}
+      />
 
       {/* Scrollable content */}
       <div class="relative w-full h-full">
@@ -171,6 +240,21 @@ const SheetChart = (props: SheetChartProps) => {
               )}
             </For>
 
+            {/* Measure Lines */}
+            <For each={measureLines()}>
+              {(x) => (
+                <line
+                  x1={x}
+                  y1={0}
+                  x2={x}
+                  y2="100%"
+                  stroke="#ccc"
+                  stroke-width="2"
+                  stroke-dasharray="4 4"
+                />
+              )}
+            </For>
+
             {/* Notes */}
             <For each={items()}>
               {({ item, x }, index) => {
@@ -178,6 +262,11 @@ const SheetChart = (props: SheetChartProps) => {
                 const color = createMemo(() => getNoteColor(item.note, settings.noteColors));
                 const isCurrentNote = () => playback.currentNoteIndex === index();
                 const topLineY = STAFF_BASE_Y - (STAFF_LINE_COUNT - 1) * STAFF_LINE_SPACING;
+
+                // Visual distinction for duration
+                const isHollow = item.duration >= 2;
+                const hasStem = item.duration < 4;
+
                 const ledgerLines = createMemo(() => {
                   const yValue = y();
                   const lines: number[] = [];
@@ -220,22 +309,28 @@ const SheetChart = (props: SheetChartProps) => {
                         />
                       )}
                     </For>
+
+                    {/* Stem (drawn before note head to appear behind) */}
+                    {hasStem && (
+                      <line
+                        x1={x + NOTE_RADIUS}
+                        y1={y()}
+                        x2={x + NOTE_RADIUS}
+                        y2={y() - 24}
+                        stroke="#000"
+                        stroke-width="1.5"
+                      />
+                    )}
+
+                    {/* Note Head */}
                     <circle
                       cx={x}
                       cy={y()}
                       r={NOTE_RADIUS}
-                      fill={color()}
-                      stroke="#000"
-                      stroke-width="1"
+                      fill={isHollow ? '#fff' : color()}
+                      stroke={isHollow ? color() : '#000'}
+                      stroke-width={isHollow ? '2' : '1'}
                       class={isCurrentNote() ? 'brightness-125' : ''}
-                    />
-                    <line
-                      x1={x + NOTE_RADIUS}
-                      y1={y()}
-                      x2={x + NOTE_RADIUS}
-                      y2={y() - 18}
-                      stroke="#000"
-                      stroke-width="1.5"
                     />
                   </g>
                 );
