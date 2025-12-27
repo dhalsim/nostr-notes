@@ -1,6 +1,6 @@
-import { For, createEffect, createMemo } from 'solid-js';
+import { For, Show, createEffect, createMemo } from 'solid-js';
 
-import { seek } from '@lib/audio/playbackEngine';
+import { seek } from '@lib/audio/playbackRouter';
 import { playback, setPlayback } from '@lib/playbackStore';
 import { settings } from '@lib/store';
 import { getNoteColor, getNoteContrastColor, getSolfege } from '@lib/utils/musicUtils';
@@ -232,6 +232,9 @@ const BarChart = (props: BarChartProps) => {
                 );
                 const label = createMemo(() => getSolfege(item.note));
                 const isCurrentNote = () => playback.currentNoteIndex === index();
+                const noteErrors = createMemo(() =>
+                  playback.errors.filter((error) => error.noteIndex === index())
+                );
 
                 const topLineY = STAFF_BASE_Y - (STAFF_LINE_COUNT - 1) * STAFF_LINE_SPACING;
                 const ledgerLines = createMemo(() => {
@@ -297,10 +300,65 @@ const BarChart = (props: BarChartProps) => {
                         {label()}
                       </text>
                     )}
+                    {/* Error indicators */}
+                    <For each={noteErrors()}>
+                      {(error) => {
+                        const errorColor =
+                          error.type === 'WRONG_NOTE' || error.type === 'MISSED_NOTE'
+                            ? '#ef4444' // Red
+                            : error.type === 'TOO_EARLY' || error.type === 'TOO_LATE'
+                              ? '#eab308' // Yellow
+                              : '#f97316'; // Orange for duration errors
+                        return (
+                          <g>
+                            {/* Error circle/X */}
+                            <circle
+                              cx={x + w / 2}
+                              cy={yCenter()}
+                              r="8"
+                              fill={errorColor}
+                              opacity="0.9"
+                            />
+                            <text
+                              x={x + w / 2}
+                              y={yCenter() + 3}
+                              font-size="10"
+                              text-anchor="middle"
+                              fill="white"
+                              font-weight="bold"
+                            >
+                              {error.type === 'WRONG_NOTE' || error.type === 'MISSED_NOTE'
+                                ? '✕'
+                                : error.type === 'TOO_EARLY'
+                                  ? '←'
+                                  : error.type === 'TOO_LATE'
+                                    ? '→'
+                                    : '~'}
+                            </text>
+                          </g>
+                        );
+                      }}
+                    </For>
                   </g>
                 );
               }}
             </For>
+            {/* Error count display */}
+            <Show when={playback.errors.length > 0 && settings.playbackMode === 'errorTracking'}>
+              <g>
+                <rect
+                  x="10"
+                  y="10"
+                  width="120"
+                  height="25"
+                  rx="4"
+                  fill="rgba(0, 0, 0, 0.7)"
+                />
+                <text x="20" y="27" font-size="12" fill="white">
+                  Errors: {playback.errors.length}
+                </text>
+              </g>
+            </Show>
           </svg>
         </div>
       </div>

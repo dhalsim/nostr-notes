@@ -3,6 +3,7 @@ import { createStore } from 'solid-js/store';
 
 export type Waveform = 'triangle' | 'sine' | 'square' | 'sawtooth';
 export type ChartType = 'bar' | 'sheet';
+export type PlaybackMode = 'normal' | 'waitForUser' | 'errorTracking';
 
 interface Settings {
   waveform: Waveform;
@@ -18,9 +19,11 @@ interface Settings {
   noteColors: Record<string, string>;
   contrastColors: Record<string, string>;
   tempo: number;
+  playbackMode: PlaybackMode;
+  showNextNoteHint: boolean;
 }
 
-const SETTINGS_VERSION = 5;
+const SETTINGS_VERSION = 6;
 const STORAGE_KEY = 'solid-piano-settings';
 
 export const DEFAULT_NOTE_COLORS: Record<string, string> = {
@@ -69,6 +72,8 @@ const DEFAULT_SETTINGS: Settings = {
   noteColors: DEFAULT_NOTE_COLORS,
   contrastColors: DEFAULT_CONTRAST_COLORS,
   tempo: 120,
+  playbackMode: 'normal',
+  showNextNoteHint: true,
 };
 
 // Load from LocalStorage

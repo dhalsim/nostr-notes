@@ -1,7 +1,7 @@
 import Dialog from '@corvu/dialog';
 import { Show, createSignal, onCleanup, onMount, type Component } from 'solid-js';
 
-import { toggle } from '@lib/audio/playbackEngine';
+import { toggle } from '@lib/audio/playbackRouter';
 
 import ChartDisplay, { DEMO_MELODY } from './components/Chart';
 import Piano from './components/Piano';
@@ -21,6 +21,10 @@ const App: Component = () => {
           return;
         }
         e.preventDefault();
+        // Space key should use normal playback mode
+        if (settings.playbackMode !== 'normal') {
+          setSettings('playbackMode', 'normal');
+        }
         toggle(DEMO_MELODY);
       }
     };

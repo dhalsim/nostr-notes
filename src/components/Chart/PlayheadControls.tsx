@@ -1,7 +1,8 @@
 import { Component } from 'solid-js';
 
-import { seek, toggle } from '@lib/audio/playbackEngine';
+import { seek, toggle } from '@lib/audio/playbackRouter';
 import { playback } from '@lib/playbackStore';
+import { setSettings, settings } from '@lib/store';
 
 import type { NoteEvent } from './index';
 
@@ -43,6 +44,10 @@ export const PlayheadControls: Component<PlayheadControlsProps> = (props) => {
           class="relative w-6 h-6 rounded-full bg-red-500 hover:bg-red-600 text-white flex items-center justify-center shadow-md transition-transform hover:scale-110 active:scale-95 z-30 cursor-pointer"
           onClick={(e) => {
             e.stopPropagation();
+            // Play button should use normal playback mode
+            if (settings.playbackMode !== 'normal') {
+              setSettings('playbackMode', 'normal');
+            }
             // If playback has no melody yet (first play), pass current notes once.
             if (playback.melody.length === 0) {
               toggle(props.melodyNotes);

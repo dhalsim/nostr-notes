@@ -2,6 +2,8 @@ import { For, Show, createMemo, createSignal, onCleanup, onMount } from 'solid-j
 import type { Component } from 'solid-js';
 
 import { playNote, stopNote } from '@lib/audio/audioEngine';
+import { userInputTracker } from '@lib/audio/userInputTracker';
+import { toggle } from '@lib/audio/playbackRouter';
 import { playback } from '@lib/playbackStore';
 import { setSettings, settings } from '@lib/store';
 import { getNoteColor, getNoteContrastColor } from '@lib/utils/musicUtils';
@@ -86,6 +88,15 @@ const Piano: Component = () => {
     }
     return melody[currentNoteIndex].note;
   });
+
+  // Next note to play (for wait-for-user mode hint)
+  const nextNoteToPlay = createMemo(() => playback.nextNoteToPlay);
+  const shouldShowNextNoteHint = createMemo(
+    () =>
+      settings.playbackMode === 'waitForUser' &&
+      settings.showNextNoteHint &&
+      nextNoteToPlay() !== null
+  );
 
   // Dynamic Map
   const currentMap = () => {
@@ -173,12 +184,20 @@ const Piano: Component = () => {
 
   const handleNoteStart = (note: string) => {
     playNote(note);
+    userInputTracker.recordPress(note);
+
+    // In wait-for-user mode, if not playing, automatically start playback on first key press
+    if (settings.playbackMode === 'waitForUser' && !playback.isPlaying) {
+      // Start playback - the melody should already be set by the chart component
+      toggle();
+    }
 
     setActiveKeys((prev) => new Set(prev).add(note));
   };
 
   const handleNoteEnd = (note: string) => {
     stopNote(note);
+    userInputTracker.recordRelease(note);
 
     setActiveKeys((prev) => {
       const next = new Set(prev);
@@ -268,6 +287,7 @@ const Piano: Component = () => {
 
               const isActive = () => activeKeys().has(note);
               const isPlaybackHighlight = () => playbackNote() === note;
+              const isNextNoteHint = () => shouldShowNextNoteHint() && nextNoteToPlay() === note;
               const contrastColor = () =>
                 settings.showKeyColors
                   ? getNoteContrastColor(note, settings.contrastColors)
@@ -279,6 +299,10 @@ const Piano: Component = () => {
                     isActive()
                       ? '!bg-gray-200 shadow-inner scale-y-[0.99] border-b-0'
                       : 'shadow-md border-b-4'
+                  } ${
+                    isNextNoteHint()
+                      ? 'ring-2 ring-yellow-400 ring-offset-2 ring-offset-gray-900 animate-pulse'
+                      : ''
                   }`}
                   style={{
                     width: `${whiteKeyWidth()}%`,
@@ -310,6 +334,17 @@ const Piano: Component = () => {
                           'background-color': contrastColor(),
                           'box-shadow': `0 0 15px ${contrastColor()}`,
                           opacity: 0.8,
+                        }}
+                      />
+                    </div>
+                  )}
+                  {isNextNoteHint() && !isPlaybackHighlight() && (
+                    <div class="pointer-events-none absolute inset-x-0 bottom-[10px] flex justify-center z-30">
+                      <div
+                        class="w-6 h-6 rounded-full aspect-square bg-yellow-400"
+                        style={{
+                          'box-shadow': '0 0 10px rgba(250, 204, 21, 0.8)',
+                          opacity: 0.9,
                         }}
                       />
                     </div>
@@ -360,6 +395,7 @@ const Piano: Component = () => {
                 : undefined;
               const isActive = () => activeKeys().has(item.note);
               const isPlaybackHighlight = () => playbackNote() === item.note;
+              const isNextNoteHint = () => shouldShowNextNoteHint() && nextNoteToPlay() === item.note;
               const contrastColor = () =>
                 settings.showKeyColors
                   ? getNoteContrastColor(item.note, settings.contrastColors)
@@ -369,6 +405,10 @@ const Piano: Component = () => {
                 <div
                   class={`absolute top-0 h-[60%] bg-black border-x border-b border-gray-800 rounded-b-md z-20 cursor-pointer transition-transform origin-top flex flex-col justify-end items-center pb-2 ${
                     isActive() ? 'bg-gray-800 scale-y-[0.98]' : 'shadow-lg'
+                  } ${
+                    isNextNoteHint()
+                      ? 'ring-2 ring-yellow-400 ring-offset-1 ring-offset-gray-900 animate-pulse'
+                      : ''
                   }`}
                   style={{
                     left: left,
@@ -401,6 +441,17 @@ const Piano: Component = () => {
                           'background-color': contrastColor(),
                           'box-shadow': `0 0 10px ${contrastColor()}`,
                           opacity: 0.8,
+                        }}
+                      />
+                    </div>
+                  )}
+                  {isNextNoteHint() && !isPlaybackHighlight() && (
+                    <div class="pointer-events-none absolute inset-x-0 bottom-2 flex justify-center z-30">
+                      <div
+                        class="w-7 h-7 rounded-full aspect-square bg-yellow-400"
+                        style={{
+                          'box-shadow': '0 0 8px rgba(250, 204, 21, 0.8)',
+                          opacity: 0.9,
                         }}
                       />
                     </div>
