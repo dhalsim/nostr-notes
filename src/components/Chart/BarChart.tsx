@@ -3,7 +3,7 @@ import { For, createEffect, createMemo } from 'solid-js';
 import { seek } from '@lib/audio/playbackEngine';
 import { playback, setPlayback } from '@lib/playbackStore';
 import { settings } from '@lib/store';
-import { getNoteColor, getSolfege } from '@lib/utils/musicUtils';
+import { getNoteColor, getNoteContrastColor, getSolfege } from '@lib/utils/musicUtils';
 
 import { createPanAndSeek } from './panUtils';
 import { PlayheadControls } from './PlayheadControls';
@@ -60,6 +60,7 @@ const BarChart = (props: BarChartProps) => {
       width: Math.max(600, cursorX + 200), // Extra padding for scroll
     };
   });
+  
   const items = () => timeline().items;
   const svgWidth = () => timeline().width;
 
@@ -158,6 +159,8 @@ const BarChart = (props: BarChartProps) => {
     scrollOffset,
     isPlaying: () => playback.isPlaying,
     currentNoteDurationMs,
+    getCurrentNoteIndex: () => playback.currentNoteIndex,
+    getLastCompletedNoteIndex: () => playback.lastCompletedNoteIndex,
     onSeek: seek,
     ignorePointerDown: (e) => !!(e.target instanceof HTMLElement && e.target.closest('button')),
   });
@@ -224,6 +227,9 @@ const BarChart = (props: BarChartProps) => {
                 const yCenter = createMemo(() => getStaffY(item.note));
                 const y = createMemo(() => yCenter() - BAR_HEIGHT / 2);
                 const color = createMemo(() => getNoteColor(item.note, settings.noteColors));
+                const contrastColor = createMemo(() =>
+                  getNoteContrastColor(item.note, settings.contrastColors)
+                );
                 const label = createMemo(() => getSolfege(item.note));
                 const isCurrentNote = () => playback.currentNoteIndex === index();
 
@@ -286,7 +292,7 @@ const BarChart = (props: BarChartProps) => {
                         y={yCenter() + 3}
                         font-size="9"
                         text-anchor="middle"
-                        fill="#fff"
+                        fill={contrastColor()}
                       >
                         {label()}
                       </text>

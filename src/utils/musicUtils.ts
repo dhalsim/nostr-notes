@@ -80,6 +80,21 @@ export const getNoteColor = (note: string, baseColors: Record<string, string>): 
   return color;
 };
 
+export const getNoteContrastColor = (
+  note: string,
+  contrastColors: Record<string, string>,
+): string => {
+  const match = note.match(/^([A-G]#?)(-?\d+)$/);
+  if (!match) {
+    return '#ffffff';
+  }
+
+  const noteName = match[1]; // e.g. "C", "F#"
+  const baseName = noteName.replace('#', '');
+
+  return contrastColors[baseName] || '#ffffff';
+};
+
 export const SOLFEGE_MAP: Record<string, string> = {
   C: 'Do',
   'C#': 'Di',

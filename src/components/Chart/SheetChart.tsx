@@ -194,6 +194,8 @@ const SheetChart = (props: SheetChartProps) => {
     scrollOffset,
     isPlaying: () => playback.isPlaying,
     currentNoteDurationMs,
+    getCurrentNoteIndex: () => playback.currentNoteIndex,
+    getLastCompletedNoteIndex: () => playback.lastCompletedNoteIndex,
     onSeek: seek,
     ignorePointerDown: (e) => !!(e.target instanceof HTMLElement && e.target.closest('button')),
   });

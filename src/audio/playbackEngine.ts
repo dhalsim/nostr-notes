@@ -45,10 +45,12 @@ function scheduleNextNote(noteIndex: number): void {
   if (startAfterTs) {
     const now = Date.now();
     const remaining = startAfterTs - now;
+
     if (remaining > 0) {
       playbackTimeoutId = setTimeout(() => {
         scheduleNextNote(noteIndex);
       }, remaining);
+
       return;
     }
     // Delay elapsed, clear it
@@ -57,10 +59,7 @@ function scheduleNextNote(noteIndex: number): void {
 
   // Stop if reached end
   if (noteIndex >= melody.length) {
-    if (melody.length > 0) {
-      setPlayback('lastCompletedNoteIndex', melody.length - 1);
-    }
-
+    // Reset to beginning (stop() already resets indices to -1)
     stop();
 
     return;
@@ -82,6 +81,7 @@ function scheduleNextNote(noteIndex: number): void {
 
   // Schedule the next note
   const durationMs = getNoteDurationMs(note.duration, tempo);
+
   playbackTimeoutId = setTimeout(() => {
     setPlayback('lastCompletedNoteIndex', noteIndex);
     scheduleNextNote(noteIndex + 1);
@@ -137,9 +137,9 @@ export function pause(): void {
  * Stop playback and reset to beginning
  */
 export function stop(): void {
-  setPlayback('isPlaying', false);
   setPlayback('currentNoteIndex', -1);
   setPlayback('lastCompletedNoteIndex', -1);
+  setPlayback('isPlaying', false);
 
   if (playbackTimeoutId) {
     clearTimeout(playbackTimeoutId);

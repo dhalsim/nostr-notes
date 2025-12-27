@@ -17,16 +17,14 @@ interface PanConfig {
   scrollOffset: Accessor<number>;
   isPlaying: Accessor<boolean>;
   currentNoteDurationMs: Accessor<number>;
+  getCurrentNoteIndex: Accessor<number>;
+  getLastCompletedNoteIndex: Accessor<number>;
   onSeek: (index: number, delayMs?: number) => void;
   ignorePointerDown?: (e: PointerEvent) => boolean;
 }
 
-const SNAP_DURATION_MS = 1000;
-
 export function createPanAndSeek(config: PanConfig) {
   const [manualOffset, setManualOffset] = createSignal(0);
-  const [snapOffset, setSnapOffset] = createSignal<number | null>(null);
-  const [isSnapping, setIsSnapping] = createSignal(false);
   let isDragging = false;
   let dragStartX = 0;
   let dragStartOffset = 0;
@@ -79,10 +77,17 @@ export function createPanAndSeek(config: PanConfig) {
 
   const applyManualOffset = (offset: number) => {
     const clamped = clampOffset(offset);
-    setManualOffset(clamped);
     const idx = findNoteAtOffset(clamped);
+
     if (idx >= 0) {
+      // Snap to the beginning of the note
+      const noteStartOffset = getNoteStartOffset(idx);
+      const snappedOffset = clampOffset(noteStartOffset);
+      setManualOffset(snappedOffset);
       config.onSeek(idx);
+    } else {
+      // No note found, just set the offset as-is
+      setManualOffset(clamped);
     }
   };
 
@@ -146,29 +151,11 @@ export function createPanAndSeek(config: PanConfig) {
   };
 
   const activeOffset = createMemo(() => {
-    // If we have a snap offset, use it (for instant jump when starting playback)
-    const snap = snapOffset();
-    if (snap !== null) {
-      return snap;
-    }
-
     return config.isPlaying() ? config.scrollOffset() : manualOffset();
   });
 
   const scrollStyle = createMemo(() => {
-    // When snap offset is active, use snap duration
-    const snapping = isSnapping();
-    const duration =
-      !snapping && config.isPlaying() ? Math.max(120, config.currentNoteDurationMs()) : 0;
-
-    // Snap animation: fast (100ms) ease-out
-    if (snapping) {
-      return {
-        transform: `translateX(-${activeOffset()}px)`,
-        transition: `transform ${SNAP_DURATION_MS}ms ease-out`,
-      };
-    }
-
+    const duration = config.isPlaying() ? Math.max(120, config.currentNoteDurationMs()) : 0;
     const easing = config.isPlaying() ? 'linear' : 'ease-out';
 
     return {
@@ -177,69 +164,23 @@ export function createPanAndSeek(config: PanConfig) {
     };
   });
 
-  // Keep manual offset in sync when starting/stopping playback
+  // When stopping playback, sync manual offset to current scroll position
+  // This ensures manual scrolling resumes from where playback left off
   createEffect((prevPlaying: boolean | undefined) => {
     const isPlaying = config.isPlaying();
-    const currentScrollOffset = config.scrollOffset();
-    const currentManual = manualOffset();
-
-    // When starting playback after manual scroll, snap to note start
-    if (!prevPlaying && isPlaying) {
-      // Find which note the user scrolled to
-      const noteIdx = findNoteAtOffset(currentManual);
-
-      if (noteIdx >= 0) {
-        // Logic: Snap to the beginning of the NEXT note
-        // unless we are very close to the start of the current note.
-        let targetIdx = noteIdx + 1;
-        const timelineItems = config.getTimeline().items;
-
-        // If we are at the last note or past it, stay on the last note
-        if (targetIdx >= timelineItems.length) {
-          targetIdx = timelineItems.length > 0 ? timelineItems.length - 1 : 0;
-        } else {
-          // Check if we are close to the start of the current note (e.g. within 5px)
-          const currentItem = timelineItems[noteIdx];
-          const currentNoteStart = currentItem.x - config.playheadX;
-          if (Math.abs(currentManual - currentNoteStart) < 5) {
-            targetIdx = noteIdx;
-          }
-        }
-
-        // Snap to the beginning of the target note
-        const noteStartOffset = getNoteStartOffset(targetIdx);
-
-        // Calculate the distance we need to snap
-        const snapDistance = Math.abs(currentManual - noteStartOffset);
-
-        // Only animate/wait if we actually need to move (> 5px threshold)
-        const needsSnap = snapDistance > 5;
-
-        if (needsSnap) {
-          // Animate and delay playback
-          config.onSeek(targetIdx, SNAP_DURATION_MS);
-          setSnapOffset(noteStartOffset);
-          setManualOffset(noteStartOffset);
-          setIsSnapping(true);
-
-          // After the snap animation, clear snap and let normal playback take over
-          setTimeout(() => {
-            setIsSnapping(false);
-            setSnapOffset(null);
-          }, SNAP_DURATION_MS);
-        } else {
-          // No snap needed - just seek immediately (no delay)
-          config.onSeek(targetIdx);
-          setManualOffset(noteStartOffset);
-        }
-      }
-    }
 
     // When stopping playback, sync manual offset to current position
     if (prevPlaying && !isPlaying) {
-      setManualOffset(currentScrollOffset);
-      setSnapOffset(null); // Clear any pending snap
-      setIsSnapping(false);
+      const currentIdx = config.getCurrentNoteIndex();
+      const lastIdx = config.getLastCompletedNoteIndex();
+
+      // If both indices are -1, we've reset to the beginning - reset manual offset to 0
+      if (currentIdx === -1 && lastIdx === -1) {
+        setManualOffset(0);
+      } else {
+        // Otherwise, sync to the current scroll position
+        setManualOffset(config.scrollOffset());
+      }
     }
 
     return isPlaying;

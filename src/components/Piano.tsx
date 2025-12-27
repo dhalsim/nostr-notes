@@ -4,7 +4,7 @@ import type { Component } from 'solid-js';
 import { playNote, stopNote } from '@lib/audio/audioEngine';
 import { playback } from '@lib/playbackStore';
 import { setSettings, settings } from '@lib/store';
-import { getNoteColor } from '@lib/utils/musicUtils';
+import { getNoteColor, getNoteContrastColor } from '@lib/utils/musicUtils';
 
 // Helper to generate keys dynamically
 const generateKeys = (startOctave: number, count: number) => {
@@ -268,6 +268,10 @@ const Piano: Component = () => {
 
               const isActive = () => activeKeys().has(note);
               const isPlaybackHighlight = () => playbackNote() === note;
+              const contrastColor = () =>
+                settings.showKeyColors
+                  ? getNoteContrastColor(note, settings.contrastColors)
+                  : '#3b82f6';
 
               return (
                 <div
@@ -299,20 +303,33 @@ const Piano: Component = () => {
                   }}
                 >
                   {isPlaybackHighlight() && (
-                    <div class="pointer-events-none absolute inset-x-0 bottom-2 flex justify-center z-30">
-                      <div class="w-12 h-12 rounded-full bg-blue-500/80 shadow-[0_0_15px_rgba(59,130,246,0.5)] animate-pulse" />
+                    <div class="pointer-events-none absolute inset-x-0 bottom-[10px] flex justify-center z-30">
+                      <div
+                        class="w-8 h-8 rounded-full animate-pulse aspect-square"
+                        style={{
+                          'background-color': contrastColor(),
+                          'box-shadow': `0 0 15px ${contrastColor()}`,
+                          opacity: 0.8,
+                        }}
+                      />
                     </div>
                   )}
                   {settings.showNotes && (
                     <span
-                      class={`text-[10px] sm:text-xs font-bold mb-1 truncate w-full text-center relative z-40 ${color ? 'text-white drop-shadow-md' : 'text-gray-400'}`}
+                      class={`text-[10px] sm:text-xs font-bold mb-1 truncate w-full text-center relative z-40 ${color ? 'drop-shadow-md' : 'text-gray-400'}`}
+                      style={color ? { color: contrastColor() } : {}}
                     >
                       {note}
                     </span>
                   )}
                   {showShortcuts() && (
                     <span
-                      class={`text-[9px] sm:text-[10px] font-bold border px-1 rounded ${color ? 'text-white border-white/50' : 'text-corvu-400 border-corvu-200'}`}
+                      class={`text-[9px] sm:text-[10px] font-bold border px-1 rounded ${color ? 'border-white/50' : 'text-corvu-400 border-corvu-200'}`}
+                      style={
+                        color
+                          ? { color: contrastColor(), 'border-color': contrastColor() }
+                          : {}
+                      }
                     >
                       {getKeyLabel(note)}
                     </span>
@@ -343,6 +360,10 @@ const Piano: Component = () => {
                 : undefined;
               const isActive = () => activeKeys().has(item.note);
               const isPlaybackHighlight = () => playbackNote() === item.note;
+              const contrastColor = () =>
+                settings.showKeyColors
+                  ? getNoteContrastColor(item.note, settings.contrastColors)
+                  : '#3b82f6';
 
               return (
                 <div
@@ -373,20 +394,33 @@ const Piano: Component = () => {
                   }}
                 >
                   {isPlaybackHighlight() && (
-                    <div class="pointer-events-none absolute inset-x-0 bottom-1 flex justify-center z-30">
-                      <div class="w-9 h-9 rounded-full bg-blue-400/80 shadow-[0_0_10px_rgba(96,165,250,0.6)] animate-pulse" />
+                    <div class="pointer-events-none absolute inset-x-0 bottom-2 flex justify-center z-30">
+                      <div
+                        class="w-9 h-9 rounded-full animate-pulse aspect-square"
+                        style={{
+                          'background-color': contrastColor(),
+                          'box-shadow': `0 0 10px ${contrastColor()}`,
+                          opacity: 0.8,
+                        }}
+                      />
                     </div>
                   )}
                   {settings.showNotes && (
                     <span
-                      class={`text-[8px] sm:text-[9px] font-bold mb-0.5 truncate w-full text-center relative z-40 ${color ? 'text-white drop-shadow-sm' : 'text-gray-300'}`}
+                      class={`text-[8px] sm:text-[9px] font-bold mb-0.5 truncate w-full text-center relative z-40 ${color ? 'drop-shadow-sm' : 'text-gray-300'}`}
+                      style={color ? { color: contrastColor() } : {}}
                     >
                       {item.note}
                     </span>
                   )}
                   {showShortcuts() && (
                     <span
-                      class={`text-[8px] font-bold border px-0.5 rounded ${color ? 'text-white border-white/50 bg-black/20' : 'text-corvu-300 border-gray-600 bg-gray-900/80'}`}
+                      class={`text-[8px] font-bold border px-0.5 rounded ${color ? 'border-white/50 bg-black/20' : 'text-corvu-300 border-gray-600 bg-gray-900/80'}`}
+                      style={
+                        color
+                          ? { color: contrastColor(), 'border-color': contrastColor() }
+                          : {}
+                      }
                     >
                       {getKeyLabel(item.note)}
                     </span>

@@ -16,10 +16,11 @@ interface Settings {
   showOctaveControls: boolean;
   showInstructions: boolean;
   noteColors: Record<string, string>;
+  contrastColors: Record<string, string>;
   tempo: number;
 }
 
-const SETTINGS_VERSION = 4;
+const SETTINGS_VERSION = 5;
 const STORAGE_KEY = 'solid-piano-settings';
 
 export const DEFAULT_NOTE_COLORS: Record<string, string> = {
@@ -30,6 +31,16 @@ export const DEFAULT_NOTE_COLORS: Record<string, string> = {
   G: '#3b82f6', // Blue (Sol)
   A: '#a855f7', // Purple (La)
   B: '#ec4899', // Pink (Si)
+};
+
+export const DEFAULT_CONTRAST_COLORS: Record<string, string> = {
+  C: '#ffffff', // White
+  D: '#000000', // Black
+  E: '#000000', // Black
+  F: '#000000', // Black
+  G: '#ffffff', // White
+  A: '#ffffff', // White
+  B: '#ffffff', // White
 };
 
 const isDesktopLikeDevice = () => {
@@ -56,6 +67,7 @@ const DEFAULT_SETTINGS: Settings = {
   showOctaveControls: isDesktopLikeDevice(),
   showInstructions: true,
   noteColors: DEFAULT_NOTE_COLORS,
+  contrastColors: DEFAULT_CONTRAST_COLORS,
   tempo: 120,
 };
 
