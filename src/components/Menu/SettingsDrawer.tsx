@@ -206,28 +206,8 @@ const SettingsDrawer: Component<SettingsDrawerProps> = (props) => {
                 {/* Charts & Colors Section */}
                 <div class="space-y-4">
                   <h3 class="text-lg font-bold text-corvu-text border-b border-corvu-300 pb-1">
-                    Charts & Colors
+                    Colors
                   </h3>
-
-                  <div class="space-y-2">
-                    <h3 class="font-semibold text-corvu-text text-sm">Chart View</h3>
-                    <div class="flex gap-2 p-1 bg-gray-200 rounded-lg">
-                      <For each={['bar', 'sheet'] as ChartType[]}>
-                        {(type) => (
-                          <button
-                            class={`flex-1 py-1.5 rounded-md text-sm font-medium transition-all ${
-                              settings.chartType === type
-                                ? 'bg-white text-corvu-text shadow-sm'
-                                : 'text-gray-500 hover:text-gray-700'
-                            }`}
-                            onClick={() => setSettings('chartType', type)}
-                          >
-                            {type === 'bar' ? 'Bar Chart' : 'Sheet Music'}
-                          </button>
-                        )}
-                      </For>
-                    </div>
-                  </div>
 
                   <div class="space-y-3 pt-2">
                     <label class="flex items-center justify-between cursor-pointer">
@@ -247,38 +227,6 @@ const SettingsDrawer: Component<SettingsDrawerProps> = (props) => {
                   <h3 class="text-lg font-bold text-corvu-text border-b border-corvu-300 pb-1">
                     Display
                   </h3>
-
-                  {/* Keyboard Size Control */}
-                  <div class="space-y-2">
-                    <div class="flex justify-between">
-                      <h3 class="font-semibold text-corvu-text text-sm">Keyboard Size</h3>
-                    </div>
-                    <div class="flex gap-2 p-1 bg-gray-200 rounded-lg">
-                      <button
-                        class={`flex-1 py-1.5 rounded-md text-sm font-medium transition-all ${
-                          settings.octaveCount === 1
-                            ? 'bg-white text-corvu-text shadow-sm'
-                            : 'text-gray-500 hover:text-gray-700'
-                        }`}
-                        onClick={() => setSettings('octaveCount', 1)}
-                      >
-                        1 Octave
-                      </button>
-                      <button
-                        class={`flex-1 py-1.5 rounded-md text-sm font-medium transition-all ${
-                          settings.octaveCount === 2
-                            ? 'bg-white text-corvu-text shadow-sm'
-                            : 'text-gray-500 hover:text-gray-700'
-                        }`}
-                        onClick={() => setSettings('octaveCount', 2)}
-                      >
-                        2 Octaves
-                      </button>
-                    </div>
-                    <p class="text-xs text-gray-500">
-                      Automatically adjusts on resize, or select manually.
-                    </p>
-                  </div>
 
                   <div class="space-y-3 pt-2">
                     <label class="flex items-center justify-between cursor-pointer">
