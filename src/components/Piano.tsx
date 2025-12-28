@@ -2,7 +2,7 @@ import { For, Show, createMemo, createSignal, onCleanup, onMount } from 'solid-j
 import type { Component } from 'solid-js';
 
 import { playNote, stopNote } from '@lib/audio/audioEngine';
-import { toggle } from '@lib/audio/playbackRouter';
+import { toggle } from '@lib/audio/playback/router';
 import { userInputTracker } from '@lib/audio/userInputTracker';
 import { playback } from '@lib/playbackStore';
 import { setSettings, settings } from '@lib/store';

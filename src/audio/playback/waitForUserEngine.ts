@@ -2,10 +2,10 @@ import type { Melody, NoteEvent } from '@lib/components/Chart';
 import { playback, setPlayback } from '@lib/playbackStore';
 import { settings } from '@lib/store';
 
-import { playNote, stopNote } from './audioEngine';
-import { checkNoteMatch } from './noteMatcher';
-import { userInputTracker } from './userInputTracker';
-import { getNoteDurationMs } from './utils';
+import { playNote, stopNote } from '../audioEngine';
+import { checkNoteMatch } from '../noteMatcher';
+import { userInputTracker } from '../userInputTracker';
+import { getNoteDurationMs } from '../utils';
 
 let currentlyPlayingNote: string | null = null;
 let inputCheckInterval: ReturnType<typeof setInterval> | null = null;
@@ -24,6 +24,39 @@ function isSameMelody(a: NoteEvent[], b: NoteEvent[]): boolean {
   }
 
   return true;
+}
+
+/**
+ * Initialize the engine with a melody (without starting playback)
+ * This sets up the melody and nextNoteToPlay for hints
+ */
+export function init(melody?: Melody | NoteEvent[]): void {
+  const melodyNotes = Array.isArray(melody) ? melody : melody?.notes;
+
+  if (!melodyNotes || melodyNotes.length === 0) {
+    return;
+  }
+
+  // Only set melody if it's different from current
+  if (!isSameMelody(melodyNotes, playback.melody)) {
+    setPlayback('melody', melodyNotes);
+    setPlayback('currentNoteIndex', -1);
+    setPlayback('lastCompletedNoteIndex', -1);
+    setPlayback('expectedNoteIndex', -1);
+    setPlayback('errors', []);
+    userInputTracker.clear();
+  }
+
+  // Set next note to play for piano highlighting (if in waitForUser mode)
+  if (settings.playbackMode === 'waitForUser' && playback.melody.length > 0) {
+    const startIndex =
+      playback.lastCompletedNoteIndex < 0 ? 0 : playback.lastCompletedNoteIndex + 1;
+    if (startIndex < playback.melody.length) {
+      setPlayback('nextNoteToPlay', playback.melody[startIndex].note);
+    } else {
+      setPlayback('nextNoteToPlay', null);
+    }
+  }
 }
 
 /**
@@ -218,6 +251,12 @@ export function play(input?: Melody | NoteEvent[]): void {
     setPlayback('expectedNoteIndex', -1);
     setPlayback('errors', []);
     userInputTracker.clear();
+    // Set next note to play for piano highlighting when melody is first set
+    if (melodyNotes.length > 0) {
+      setPlayback('nextNoteToPlay', melodyNotes[0].note);
+    } else {
+      setPlayback('nextNoteToPlay', null);
+    }
   }
 
   // Don't start if no melody
@@ -243,7 +282,7 @@ export function play(input?: Melody | NoteEvent[]): void {
     lastCheckedEventCount = currentCount;
   }
 
-  // Set next note to play for piano highlighting
+  // Set next note to play for piano highlighting (always update when play() is called)
   if (startIndex < playback.melody.length) {
     setPlayback('nextNoteToPlay', playback.melody[startIndex].note);
   } else {

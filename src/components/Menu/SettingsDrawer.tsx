@@ -9,13 +9,7 @@ import {
   type Component,
 } from 'solid-js';
 
-import {
-  setSettings,
-  settings,
-  type Waveform,
-  type ChartType,
-  type PlaybackMode,
-} from '@lib/store';
+import { setSettings, settings, type Waveform, type ChartType } from '@lib/store';
 
 // Chrome/Edge on desktop + Android fire `beforeinstallprompt`.
 // Safari/iOS does not, so we show an "Add to Home Screen" hint there.
@@ -24,7 +18,12 @@ type BeforeInstallPromptEvent = Event & {
   userChoice: Promise<{ outcome: 'accepted' | 'dismissed'; platform: string }>;
 };
 
-const SettingsDrawer: Component = () => {
+interface SettingsDrawerProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+}
+
+const SettingsDrawer: Component<SettingsDrawerProps> = (props) => {
   const [deferredPrompt, setDeferredPrompt] = createSignal<BeforeInstallPromptEvent | null>(null);
   const [isInstalled, setIsInstalled] = createSignal(false);
   const [showIosA2hsHint, setShowIosA2hsHint] = createSignal(false);
@@ -122,34 +121,14 @@ const SettingsDrawer: Component = () => {
   });
 
   return (
-    <Drawer breakPoints={[0.75]}>
-      {(props) => (
+    <Drawer breakPoints={[0.75]} open={props.open} onOpenChange={props.onOpenChange}>
+      {(drawerProps) => (
         <>
-          <Drawer.Trigger
-            aria-label="Settings"
-            title="Settings"
-            class="fixed top-4 right-4 z-50 grid h-10 w-10 place-items-center rounded-full bg-gray-900/90 text-white transition-all hover:bg-gray-800 active:translate-y-0.5 shadow-lg ring-1 ring-white/10"
-          >
-            <span class="sr-only">Settings</span>
-            <svg
-              class="h-5 w-5"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              aria-hidden="true"
-            >
-              <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.09a2 2 0 0 1-1-1.74v-.47a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.39a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z" />
-              <circle cx="12" cy="12" r="3" />
-            </svg>
-          </Drawer.Trigger>
           <Drawer.Portal>
             <Drawer.Overlay
               class="fixed inset-0 z-50 bg-black/50 transition-opacity duration-500"
               style={{
-                'background-color': `rgb(0 0 0 / ${0.5 * props.openPercentage})`,
+                'background-color': `rgb(0 0 0 / ${0.5 * drawerProps.openPercentage})`,
               }}
             />
             <Drawer.Content class="fixed inset-x-0 bottom-0 z-50 flex h-full max-h-[600px] flex-col rounded-t-2xl border-t-4 border-corvu-400 bg-corvu-100 pt-3 transition-transform duration-500 after:absolute after:inset-x-0 after:top-full after:h-1/2 after:bg-inherit md:select-none">
@@ -261,81 +240,6 @@ const SettingsDrawer: Component = () => {
                       />
                     </label>
                   </div>
-                </div>
-
-                {/* Playback Mode Section */}
-                <div class="space-y-4">
-                  <h3 class="text-lg font-bold text-corvu-text border-b border-corvu-300 pb-1">
-                    Playback Mode
-                  </h3>
-
-                  <div class="space-y-2">
-                    <h3 class="font-semibold text-corvu-text text-sm">Mode</h3>
-                    <div class="flex flex-col gap-2">
-                      <label class="flex items-center gap-2 cursor-pointer">
-                        <input
-                          type="radio"
-                          name="playbackMode"
-                          value="normal"
-                          checked={settings.playbackMode === 'normal'}
-                          onChange={() => setSettings('playbackMode', 'normal' as PlaybackMode)}
-                          class="w-4 h-4 text-corvu-400 focus:ring-corvu-400"
-                        />
-                        <span class="text-sm text-corvu-text">Normal - Auto playback</span>
-                      </label>
-                      <label class="flex items-center gap-2 cursor-pointer">
-                        <input
-                          type="radio"
-                          name="playbackMode"
-                          value="waitForUser"
-                          checked={settings.playbackMode === 'waitForUser'}
-                          onChange={() =>
-                            setSettings('playbackMode', 'waitForUser' as PlaybackMode)
-                          }
-                          class="w-4 h-4 text-corvu-400 focus:ring-corvu-400"
-                        />
-                        <span class="text-sm text-corvu-text">Practice - Wait for you</span>
-                      </label>
-                      <label class="flex items-center gap-2 cursor-pointer">
-                        <input
-                          type="radio"
-                          name="playbackMode"
-                          value="errorTracking"
-                          checked={settings.playbackMode === 'errorTracking'}
-                          onChange={() =>
-                            setSettings('playbackMode', 'errorTracking' as PlaybackMode)
-                          }
-                          class="w-4 h-4 text-corvu-400 focus:ring-corvu-400"
-                        />
-                        <span class="text-sm text-corvu-text">
-                          Error Tracking - Play with tempo
-                        </span>
-                      </label>
-                    </div>
-                    <p class="text-xs text-gray-500">
-                      Normal: Auto playback. Practice: Wait for you to play each note. Error
-                      Tracking: Play at tempo and track errors.
-                    </p>
-                  </div>
-
-                  <Show when={settings.playbackMode === 'waitForUser'}>
-                    <div class="space-y-3 pt-2">
-                      <label class="flex items-center justify-between cursor-pointer">
-                        <span class="font-semibold text-corvu-text text-sm">
-                          Show Next Note Hint
-                        </span>
-                        <input
-                          type="checkbox"
-                          checked={settings.showNextNoteHint}
-                          onChange={(e) => setSettings('showNextNoteHint', e.currentTarget.checked)}
-                          class="w-5 h-5 rounded border-corvu-300 text-corvu-400 focus:ring-corvu-400"
-                        />
-                      </label>
-                      <p class="text-xs text-gray-500">
-                        Highlight the next note to play on the piano keyboard.
-                      </p>
-                    </div>
-                  </Show>
                 </div>
 
                 {/* Display Settings Section */}
@@ -453,7 +357,7 @@ const SettingsDrawer: Component = () => {
                     <div class="rounded-lg border border-corvu-200 bg-white px-3 py-2 text-sm text-corvu-text space-y-1">
                       <div class="font-semibold">Install on iPhone/iPad</div>
                       <div class="text-xs text-gray-600">
-                        Open in Safari → Share → “Add to Home Screen”.
+                        Open in Safari → Share → "Add to Home Screen".
                       </div>
                     </div>
                   </Show>

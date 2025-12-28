@@ -1,6 +1,6 @@
 import type { Component } from 'solid-js';
 
-import { seek, toggle } from '@lib/audio/playbackRouter';
+import { seek, toggle } from '@lib/audio/playback/router';
 import { playback } from '@lib/playbackStore';
 import { setSettings, settings } from '@lib/store';
 

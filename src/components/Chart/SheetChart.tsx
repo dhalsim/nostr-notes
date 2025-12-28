@@ -1,6 +1,6 @@
 import { For, Show, createEffect, createMemo } from 'solid-js';
 
-import { seek } from '@lib/audio/playbackRouter';
+import { seek } from '@lib/audio/playback/router';
 import { playback, setPlayback } from '@lib/playbackStore';
 import { settings } from '@lib/store';
 import { getNoteColor } from '@lib/utils/musicUtils';

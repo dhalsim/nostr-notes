@@ -1,17 +1,28 @@
 import Dialog from '@corvu/dialog';
-import { Show, createSignal, onCleanup, onMount, type Component } from 'solid-js';
+import { Show, createEffect, createSignal, onCleanup, onMount, type Component } from 'solid-js';
 
-import { toggle } from '@lib/audio/playbackRouter';
+import { init, toggle } from '@lib/audio/playback/router';
 
 import ChartDisplay, { DEMO_MELODY } from './components/Chart';
+import MenuBar from './components/Menu/MenuBar';
 import Piano from './components/Piano';
-import SettingsDrawer from './components/SettingsDrawer';
+import { playback } from './playbackStore';
 import { setSettings, settings } from './store';
 
 const App: Component = () => {
   const [showRotateHint, setShowRotateHint] = createSignal(false);
 
+  // Re-initialize when playback mode changes to waitForUser (to update nextNoteToPlay hint)
+  createEffect(() => {
+    if (settings.playbackMode === 'waitForUser' && playback.melody.length > 0) {
+      init(); // Re-initialize with existing melody
+    }
+  });
+
   onMount(() => {
+    // Initialize playback with demo melody (sets up hints without starting playback)
+    init(DEMO_MELODY);
+
     // Keyboard shortcut: Space to toggle playback
     const handleKeyDown = (e: KeyboardEvent) => {
       // Prefer e.code for space; e.key is usually ' ' (space character), not 'Space'
@@ -93,7 +104,7 @@ const App: Component = () => {
           }
         }}
       />
-      <SettingsDrawer />
+      <MenuBar />
     </div>
   );
 };

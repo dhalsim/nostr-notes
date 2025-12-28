@@ -21,6 +21,17 @@ function getEngine() {
 }
 
 /**
+ * Initialize the playback system with a melody (without starting playback)
+ * This sets up the melody and nextNoteToPlay for hints
+ */
+export function init(melody?: Melody | NoteEvent[]): void {
+  const engine = getEngine();
+  if (engine.init) {
+    engine.init(melody);
+  }
+}
+
+/**
  * Start or resume playback
  */
 export function play(input?: Melody | NoteEvent[]): void {
