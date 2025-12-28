@@ -5,9 +5,51 @@ export type Waveform = 'triangle' | 'sine' | 'square' | 'sawtooth';
 export type ChartType = 'bar' | 'sheet';
 export type PlaybackMode = 'normal' | 'waitForUser' | 'errorTracking';
 
+export type InstrumentPreset = {
+  id: string;
+  name: string;
+  // Oscillator settings
+  oscillators: {
+    type: Waveform;
+    detune?: number; // cents, for layering
+    volume?: number; // 0-1, for mixing multiple oscillators
+  }[];
+  // Filter settings
+  filter: {
+    enabled: boolean;
+    type: 'lowpass' | 'highpass' | 'bandpass' | 'notch' | 'allpass';
+    frequency: number; // Hz
+    Q: number; // resonance
+    // Filter envelope
+    envelope: {
+      attack: number; // seconds
+      decay: number;
+      sustain: number; // 0-1
+      release: number;
+      attackLevel: number; // Hz - filter frequency at attack peak
+      sustainLevel: number; // Hz - filter frequency at sustain
+    };
+  };
+  // Amplifier envelope (more configurable than current)
+  ampEnvelope: {
+    attack: number;
+    decay: number;
+    sustain: number; // 0-1
+    release: number;
+  };
+  // Saturation/distortion
+  saturation: {
+    enabled: boolean;
+    amount: number; // 0-100, distortion drive
+  };
+};
+
 interface Settings {
-  waveform: Waveform;
+  waveform: Waveform; // Keep for backward compatibility and waveform toggle button
   volume: number;
+  tempo: number;
+  currentPresetId: string;
+  customPresets: Record<string, InstrumentPreset>;
   showNotes: boolean;
   showShortcuts: boolean;
   octaveCount: number; // 1 or 2
@@ -18,12 +60,11 @@ interface Settings {
   showInstructions: boolean;
   noteColors: Record<string, string>;
   contrastColors: Record<string, string>;
-  tempo: number;
   playbackMode: PlaybackMode;
   showNextNoteHint: boolean;
 }
 
-const SETTINGS_VERSION = 6;
+const SETTINGS_VERSION = 7;
 const STORAGE_KEY = 'solid-piano-settings';
 
 export const DEFAULT_NOTE_COLORS: Record<string, string> = {
@@ -61,6 +102,9 @@ const isDesktopLikeDevice = () => {
 const DEFAULT_SETTINGS: Settings = {
   waveform: 'triangle',
   volume: 0.5,
+  tempo: 120,
+  currentPresetId: 'simple',
+  customPresets: {},
   showNotes: true,
   showShortcuts: true,
   octaveCount: 1,
@@ -71,7 +115,6 @@ const DEFAULT_SETTINGS: Settings = {
   showInstructions: true,
   noteColors: DEFAULT_NOTE_COLORS,
   contrastColors: DEFAULT_CONTRAST_COLORS,
-  tempo: 120,
   playbackMode: 'normal',
   showNextNoteHint: true,
 };
@@ -85,8 +128,17 @@ const loadSettings = (): Settings => {
       if (parsed.version === SETTINGS_VERSION && parsed.data) {
         return { ...DEFAULT_SETTINGS, ...parsed.data };
       } else if (parsed.version < SETTINGS_VERSION && parsed.data) {
-        // Migration logic if needed (simple merge for now)
-        return { ...DEFAULT_SETTINGS, ...parsed.data };
+        // Migration logic: add new preset fields if upgrading from old version
+        const migrated = { ...DEFAULT_SETTINGS, ...parsed.data };
+        if (!migrated.currentPresetId) {
+          migrated.currentPresetId = 'simple';
+        }
+
+        if (!migrated.customPresets) {
+          migrated.customPresets = {};
+        }
+
+        return migrated;
       }
     }
   } catch (e) {

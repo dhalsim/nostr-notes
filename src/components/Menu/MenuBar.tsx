@@ -1,15 +1,17 @@
 import { Show, createSignal, type Component } from 'solid-js';
 
-import { setSettings, settings } from '@lib/store';
+import { setSettings, settings, type InstrumentPreset } from '@lib/store';
+import { BUILTIN_PRESETS } from '@lib/audio/presets';
 
 import PlaybackModeDrawer from './PlaybackModeDrawer';
 import SettingsDrawer from './SettingsDrawer';
+import AudioSettingsDrawer from './AudioSettingsDrawer';
 
 const MenuBar: Component = () => {
   const [isExpanded, setIsExpanded] = createSignal(false);
-  const [activeDrawer, setActiveDrawer] = createSignal<'settings' | 'playback' | null>(null);
+  const [activeDrawer, setActiveDrawer] = createSignal<'settings' | 'playback' | 'audio' | null>(null);
 
-  const handleIconClick = (drawer: 'settings' | 'playback') => {
+  const handleIconClick = (drawer: 'settings' | 'playback' | 'audio') => {
     // Toggle: if clicking the same drawer, close it; otherwise open the new one
     if (activeDrawer() === drawer) {
       setActiveDrawer(null);
@@ -44,7 +46,38 @@ const MenuBar: Component = () => {
     ];
     const currentIndex = waveforms.indexOf(settings.waveform);
     const nextIndex = (currentIndex + 1) % waveforms.length;
-    setSettings('waveform', waveforms[nextIndex]);
+    const nextWaveform = waveforms[nextIndex];
+    setSettings('waveform', nextWaveform);
+    
+    // Also update the first oscillator of the current preset
+    const allPresets = { ...BUILTIN_PRESETS, ...settings.customPresets };
+    const preset = allPresets[settings.currentPresetId] || BUILTIN_PRESETS['simple'];
+    if (preset.oscillators.length > 0) {
+      const updatedOscillators = [...preset.oscillators];
+      updatedOscillators[0] = { ...updatedOscillators[0], type: nextWaveform };
+      
+      // If it's a built-in preset, create a custom copy
+      if (BUILTIN_PRESETS[preset.id]) {
+        const customId = `${preset.id}-custom-${Date.now()}`;
+        const customPreset: InstrumentPreset = {
+          ...preset,
+          id: customId,
+          name: `${preset.name} (Custom)`,
+          oscillators: updatedOscillators,
+        };
+        setSettings('customPresets', {
+          ...settings.customPresets,
+          [customId]: customPreset,
+        });
+        setSettings('currentPresetId', customId);
+      } else {
+        // Update existing custom preset
+        setSettings('customPresets', {
+          ...settings.customPresets,
+          [preset.id]: { ...preset, oscillators: updatedOscillators },
+        });
+      }
+    }
   };
 
   return (
@@ -95,6 +128,28 @@ const MenuBar: Component = () => {
             >
               <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.09a2 2 0 0 1-1-1.74v-.47a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.39a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z" />
               <circle cx="12" cy="12" r="3" />
+            </svg>
+          </button>
+
+          {/* Audio Settings Icon (Speaker) */}
+          <button
+            onClick={() => handleIconClick('audio')}
+            aria-label="Audio Settings"
+            title="Audio Settings"
+            class="grid h-10 w-10 place-items-center rounded-full bg-gray-900/90 text-white transition-all hover:bg-gray-800 active:translate-y-0.5 shadow-lg ring-1 ring-white/10"
+          >
+            <svg
+              class="h-5 w-5"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              aria-hidden="true"
+            >
+              <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
+              <path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07" />
             </svg>
           </button>
 
@@ -293,6 +348,16 @@ const MenuBar: Component = () => {
       />
       <PlaybackModeDrawer
         open={activeDrawer() === 'playback'}
+        onOpenChange={(open) => {
+          if (!open) {
+            handleClose();
+          } else {
+            setIsExpanded(true);
+          }
+        }}
+      />
+      <AudioSettingsDrawer
+        open={activeDrawer() === 'audio'}
         onOpenChange={(open) => {
           if (!open) {
             handleClose();

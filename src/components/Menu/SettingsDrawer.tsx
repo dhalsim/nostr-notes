@@ -9,7 +9,7 @@ import {
   type Component,
 } from 'solid-js';
 
-import { setSettings, settings, type Waveform } from '@lib/store';
+import { setSettings, settings } from '@lib/store';
 
 // Chrome/Edge on desktop + Android fire `beforeinstallprompt`.
 // Safari/iOS does not, so we show an "Add to Home Screen" hint there.
@@ -136,51 +136,8 @@ const SettingsDrawer: Component<SettingsDrawerProps> = (props) => {
 
               <div class="px-6 space-y-8 overflow-y-auto pb-8">
                 <Drawer.Label class="text-2xl font-bold text-center text-corvu-text">
-                  Synthesizer Settings
+                  Settings
                 </Drawer.Label>
-
-                {/* Audio Settings Section */}
-                <div class="space-y-4">
-                  <h3 class="text-lg font-bold text-corvu-text border-b border-corvu-300 pb-1">
-                    Audio
-                  </h3>
-
-                  {/* Tempo Control */}
-                  <div class="space-y-2">
-                    <div class="flex justify-between">
-                      <h3 class="font-semibold text-corvu-text text-sm">Tempo (BPM)</h3>
-                      <span class="text-sm text-gray-500">{settings.tempo}</span>
-                    </div>
-                    <input
-                      type="range"
-                      min="20"
-                      max="300"
-                      step="1"
-                      value={settings.tempo}
-                      onInput={(e) => setSettings('tempo', parseInt(e.currentTarget.value))}
-                      class="w-full h-2 bg-corvu-200 rounded-lg appearance-none cursor-pointer accent-corvu-400"
-                    />
-                  </div>
-
-                  {/* Volume Slider */}
-                  <div class="space-y-2">
-                    <div class="flex justify-between">
-                      <h3 class="font-semibold text-corvu-text text-sm">Master Volume</h3>
-                      <span class="text-sm text-gray-500">
-                        {Math.round(settings.volume * 100)}%
-                      </span>
-                    </div>
-                    <input
-                      type="range"
-                      min="0"
-                      max="1"
-                      step="0.01"
-                      value={settings.volume}
-                      onInput={(e) => setSettings('volume', parseFloat(e.currentTarget.value))}
-                      class="w-full h-2 bg-corvu-200 rounded-lg appearance-none cursor-pointer accent-corvu-400"
-                    />
-                  </div>
-                </div>
 
                 {/* Charts & Colors Section */}
                 <div class="space-y-4">
