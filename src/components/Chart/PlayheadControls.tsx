@@ -1,4 +1,4 @@
-import { Component } from 'solid-js';
+import type { Component } from 'solid-js';
 
 import { seek, toggle } from '@lib/audio/playbackRouter';
 import { playback } from '@lib/playbackStore';
@@ -76,4 +76,3 @@ export const PlayheadControls: Component<PlayheadControlsProps> = (props) => {
     </div>
   );
 };
-

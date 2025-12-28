@@ -7,6 +7,7 @@ import { getNoteColor } from '@lib/utils/musicUtils';
 
 import { createPanAndSeek } from './panUtils';
 import { PlayheadControls } from './PlayheadControls';
+
 import type { Melody, NoteEvent } from './index';
 
 interface SheetChartProps {
@@ -66,9 +67,13 @@ const SheetChart = (props: SheetChartProps) => {
   const svgWidth = () => timeline().width;
 
   const isSameNotes = (a: NoteEvent[], b: NoteEvent[]) => {
-    if (a.length !== b.length) return false;
+    if (a.length !== b.length) {
+      return false;
+    }
     for (let i = 0; i < a.length; i += 1) {
-      if (a[i].note !== b[i].note || a[i].duration !== b[i].duration) return false;
+      if (a[i].note !== b[i].note || a[i].duration !== b[i].duration) {
+        return false;
+      }
     }
     return true;
   };
@@ -100,13 +105,15 @@ const SheetChart = (props: SheetChartProps) => {
 
   // Calculate scroll offset to align current note with playhead
   const scrollOffset = createMemo(() => {
-    const anchorIndex = playback.isPlaying ? playback.currentNoteIndex : playback.lastCompletedNoteIndex;
+    const anchorIndex = playback.isPlaying
+      ? playback.currentNoteIndex
+      : playback.lastCompletedNoteIndex;
     if (anchorIndex < 0) {
       return 0;
     }
 
     const targetIndex = anchorIndex + 1;
-    const timelineItems = timeline().items;;
+    const timelineItems = timeline().items;
 
     // If we're at the last note, we target the end of the timeline
     let targetX = 0;
@@ -124,7 +131,9 @@ const SheetChart = (props: SheetChartProps) => {
 
   // Calculate measure lines
   const measureLines = createMemo(() => {
-    if (!props.melody.ratio) return [];
+    if (!props.melody.ratio) {
+      return [];
+    }
 
     const [beatsPerMeasure, beatNoteValue] = props.melody.ratio;
     // Calculate measure duration in relative duration units (assuming 1 = quarter note)
@@ -132,54 +141,27 @@ const SheetChart = (props: SheetChartProps) => {
     // e.g. 4/4 -> 4 * (4/4) = 4 units
     // e.g. 6/8 -> 6 * (4/8) = 3 units (if 1 unit = quarter note)
     const measureDuration = beatsPerMeasure * (4 / beatNoteValue);
-    
+
     // We need to cover the entire timeline width
     const width = svgWidth();
     const lines: number[] = [];
-    
+
     // Calculate total duration to know how far to draw
     const totalDuration = props.melody.notes.reduce((acc, note) => acc + note.duration, 0);
     const totalMeasures = Math.ceil(totalDuration / measureDuration);
 
     for (let i = 1; i <= totalMeasures; i++) {
       // Each measure starts at START_X + cumulative duration * spacing
-      const x = START_X + (i * measureDuration * NOTE_SPACING);
+      const x = START_X + i * measureDuration * NOTE_SPACING;
       if (x < width) {
         lines.push(x);
       }
     }
-    
+
     return lines;
   });
 
-  // Find the note index at a given offset (playhead position)
-  const findNoteAtOffset = (offset: number): number => {
-    const playheadPosition = offset + PLAYHEAD_X;
-    const timelineItems = timeline().items;
-    let foundIndex = -1;
-
-    for (let i = 0; i < timelineItems.length; i++) {
-      if (timelineItems[i].x <= playheadPosition) {
-        foundIndex = i;
-      } else {
-        break;
-      }
-    }
-
-    return foundIndex;
-  };
-
-  // Calculate max scroll offset
-  const maxOffset = createMemo(() => {
-    const timelineItems = timeline().items;
-    if (timelineItems.length === 0) return 0;
-    const last = timelineItems[timelineItems.length - 1];
-    return Math.max(0, last.x + last.w - PLAYHEAD_X);
-  });
-
   const {
-    manualOffset,
-    activeOffset,
     scrollStyle,
     handleWheel,
     handlePointerDown,
@@ -264,7 +246,7 @@ const SheetChart = (props: SheetChartProps) => {
                 const color = createMemo(() => getNoteColor(item.note, settings.noteColors));
                 const isCurrentNote = () => playback.currentNoteIndex === index();
                 const noteErrors = createMemo(() =>
-                  playback.errors.filter((error) => error.noteIndex === index())
+                  playback.errors.filter((error) => error.noteIndex === index()),
                 );
                 const topLineY = STAFF_BASE_Y - (STAFF_LINE_COUNT - 1) * STAFF_LINE_SPACING;
 
@@ -383,14 +365,7 @@ const SheetChart = (props: SheetChartProps) => {
             {/* Error count display */}
             <Show when={playback.errors.length > 0 && settings.playbackMode === 'errorTracking'}>
               <g>
-                <rect
-                  x="10"
-                  y="10"
-                  width="120"
-                  height="25"
-                  rx="4"
-                  fill="rgba(0, 0, 0, 0.7)"
-                />
+                <rect x="10" y="10" width="120" height="25" rx="4" fill="rgba(0, 0, 0, 0.7)" />
                 <text x="20" y="27" font-size="12" fill="white">
                   Errors: {playback.errors.length}
                 </text>

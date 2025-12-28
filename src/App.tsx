@@ -125,8 +125,8 @@ const InstructionsDialog = (props: InstructionsDialogProps) => {
                   </button>
                 </div>
                 <p class="mt-4 text-sm text-gray-600">
-                  Press the keys on your keyboard or click/touch the piano to play. Press the Space key to play or pause
-                  the demo song.
+                  Press the keys on your keyboard or click/touch the piano to play. Press the Space
+                  key to play or pause the demo song.
                 </p>
                 <p class="mt-3 text-xs text-gray-400 font-mono">
                   v{__APP_VERSION__} ({__GIT_SHA__})

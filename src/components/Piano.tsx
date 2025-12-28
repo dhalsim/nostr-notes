@@ -2,8 +2,8 @@ import { For, Show, createMemo, createSignal, onCleanup, onMount } from 'solid-j
 import type { Component } from 'solid-js';
 
 import { playNote, stopNote } from '@lib/audio/audioEngine';
-import { userInputTracker } from '@lib/audio/userInputTracker';
 import { toggle } from '@lib/audio/playbackRouter';
+import { userInputTracker } from '@lib/audio/userInputTracker';
 import { playback } from '@lib/playbackStore';
 import { setSettings, settings } from '@lib/store';
 import { getNoteColor, getNoteContrastColor } from '@lib/utils/musicUtils';
@@ -95,7 +95,7 @@ const Piano: Component = () => {
     () =>
       settings.playbackMode === 'waitForUser' &&
       settings.showNextNoteHint &&
-      nextNoteToPlay() !== null
+      nextNoteToPlay() !== null,
   );
 
   // Dynamic Map
@@ -361,9 +361,7 @@ const Piano: Component = () => {
                     <span
                       class={`text-[9px] sm:text-[10px] font-bold border px-1 rounded ${color ? 'border-white/50' : 'text-corvu-400 border-corvu-200'}`}
                       style={
-                        color
-                          ? { color: contrastColor(), 'border-color': contrastColor() }
-                          : {}
+                        color ? { color: contrastColor(), 'border-color': contrastColor() } : {}
                       }
                     >
                       {getKeyLabel(note)}
@@ -395,7 +393,8 @@ const Piano: Component = () => {
                 : undefined;
               const isActive = () => activeKeys().has(item.note);
               const isPlaybackHighlight = () => playbackNote() === item.note;
-              const isNextNoteHint = () => shouldShowNextNoteHint() && nextNoteToPlay() === item.note;
+              const isNextNoteHint = () =>
+                shouldShowNextNoteHint() && nextNoteToPlay() === item.note;
               const contrastColor = () =>
                 settings.showKeyColors
                   ? getNoteContrastColor(item.note, settings.contrastColors)
@@ -468,9 +467,7 @@ const Piano: Component = () => {
                     <span
                       class={`text-[8px] font-bold border px-0.5 rounded ${color ? 'border-white/50 bg-black/20' : 'text-corvu-300 border-gray-600 bg-gray-900/80'}`}
                       style={
-                        color
-                          ? { color: contrastColor(), 'border-color': contrastColor() }
-                          : {}
+                        color ? { color: contrastColor(), 'border-color': contrastColor() } : {}
                       }
                     >
                       {getKeyLabel(item.note)}

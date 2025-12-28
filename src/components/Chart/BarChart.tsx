@@ -7,6 +7,7 @@ import { getNoteColor, getNoteContrastColor, getSolfege } from '@lib/utils/music
 
 import { createPanAndSeek } from './panUtils';
 import { PlayheadControls } from './PlayheadControls';
+
 import type { Melody, NoteEvent } from './index';
 
 interface BarChartProps {
@@ -14,7 +15,6 @@ interface BarChartProps {
 }
 
 const BarChart = (props: BarChartProps) => {
-
   const BAR_WIDTH_UNIT = 60; // px per duration unit
   const BAR_GAP = 6;
   const BAR_HEIGHT = 10;
@@ -60,14 +60,18 @@ const BarChart = (props: BarChartProps) => {
       width: Math.max(600, cursorX + 200), // Extra padding for scroll
     };
   });
-  
+
   const items = () => timeline().items;
   const svgWidth = () => timeline().width;
 
   const isSameNotes = (a: NoteEvent[], b: NoteEvent[]) => {
-    if (a.length !== b.length) return false;
+    if (a.length !== b.length) {
+      return false;
+    }
     for (let i = 0; i < a.length; i += 1) {
-      if (a[i].note !== b[i].note || a[i].duration !== b[i].duration) return false;
+      if (a[i].note !== b[i].note || a[i].duration !== b[i].duration) {
+        return false;
+      }
     }
     return true;
   };
@@ -98,7 +102,9 @@ const BarChart = (props: BarChartProps) => {
 
   // Calculate scroll offset to align current note with playhead
   const scrollOffset = createMemo(() => {
-    const anchorIndex = playback.isPlaying ? playback.currentNoteIndex : playback.lastCompletedNoteIndex;
+    const anchorIndex = playback.isPlaying
+      ? playback.currentNoteIndex
+      : playback.lastCompletedNoteIndex;
     if (anchorIndex < 0) {
       return 0;
     }
@@ -123,7 +129,9 @@ const BarChart = (props: BarChartProps) => {
 
   // Calculate measure lines
   const measureLines = createMemo(() => {
-    if (!props.melody.ratio) return [];
+    if (!props.melody.ratio) {
+      return [];
+    }
 
     const [beatsPerMeasure, beatNoteValue] = props.melody.ratio;
     const measureDuration = beatsPerMeasure * (4 / beatNoteValue);
@@ -134,7 +142,7 @@ const BarChart = (props: BarChartProps) => {
     const totalMeasures = Math.ceil(totalDuration / measureDuration);
 
     for (let i = 1; i <= totalMeasures; i++) {
-      const x = START_X + (i * measureDuration * BAR_WIDTH_UNIT);
+      const x = START_X + i * measureDuration * BAR_WIDTH_UNIT;
       if (x < width) {
         lines.push(x);
       }
@@ -143,8 +151,6 @@ const BarChart = (props: BarChartProps) => {
   });
 
   const {
-    manualOffset,
-    activeOffset,
     scrollStyle,
     handleWheel,
     handlePointerDown,
@@ -228,12 +234,12 @@ const BarChart = (props: BarChartProps) => {
                 const y = createMemo(() => yCenter() - BAR_HEIGHT / 2);
                 const color = createMemo(() => getNoteColor(item.note, settings.noteColors));
                 const contrastColor = createMemo(() =>
-                  getNoteContrastColor(item.note, settings.contrastColors)
+                  getNoteContrastColor(item.note, settings.contrastColors),
                 );
                 const label = createMemo(() => getSolfege(item.note));
                 const isCurrentNote = () => playback.currentNoteIndex === index();
                 const noteErrors = createMemo(() =>
-                  playback.errors.filter((error) => error.noteIndex === index())
+                  playback.errors.filter((error) => error.noteIndex === index()),
                 );
 
                 const topLineY = STAFF_BASE_Y - (STAFF_LINE_COUNT - 1) * STAFF_LINE_SPACING;
@@ -346,14 +352,7 @@ const BarChart = (props: BarChartProps) => {
             {/* Error count display */}
             <Show when={playback.errors.length > 0 && settings.playbackMode === 'errorTracking'}>
               <g>
-                <rect
-                  x="10"
-                  y="10"
-                  width="120"
-                  height="25"
-                  rx="4"
-                  fill="rgba(0, 0, 0, 0.7)"
-                />
+                <rect x="10" y="10" width="120" height="25" rx="4" fill="rgba(0, 0, 0, 0.7)" />
                 <text x="20" y="27" font-size="12" fill="white">
                   Errors: {playback.errors.length}
                 </text>

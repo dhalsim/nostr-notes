@@ -21,7 +21,7 @@ export function calculateTimingError(expectedTime: number, actualTime: number): 
 export function checkDurationMatch(
   expectedDuration: number,
   actualDuration: number,
-  tolerance: number = 100 // ms tolerance
+  tolerance: number = 100, // ms tolerance
 ): boolean {
   return Math.abs(expectedDuration - actualDuration) <= tolerance;
 }
@@ -37,7 +37,7 @@ export function createError(
     actualNote?: string;
     timingError?: number;
     durationError?: number;
-  }
+  },
 ): PlaybackError {
   return {
     type,

@@ -9,7 +9,13 @@ import {
   type Component,
 } from 'solid-js';
 
-import { setSettings, settings, type Waveform, type ChartType, type PlaybackMode } from '@lib/store';
+import {
+  setSettings,
+  settings,
+  type Waveform,
+  type ChartType,
+  type PlaybackMode,
+} from '@lib/store';
 
 // Chrome/Edge on desktop + Android fire `beforeinstallprompt`.
 // Safari/iOS does not, so we show an "Add to Home Screen" hint there.
@@ -185,9 +191,7 @@ const SettingsDrawer: Component = () => {
                   <div class="space-y-2">
                     <div class="flex justify-between">
                       <h3 class="font-semibold text-corvu-text text-sm">Tempo (BPM)</h3>
-                      <span class="text-sm text-gray-500">
-                        {settings.tempo}
-                      </span>
+                      <span class="text-sm text-gray-500">{settings.tempo}</span>
                     </div>
                     <input
                       type="range"
@@ -285,7 +289,9 @@ const SettingsDrawer: Component = () => {
                           name="playbackMode"
                           value="waitForUser"
                           checked={settings.playbackMode === 'waitForUser'}
-                          onChange={() => setSettings('playbackMode', 'waitForUser' as PlaybackMode)}
+                          onChange={() =>
+                            setSettings('playbackMode', 'waitForUser' as PlaybackMode)
+                          }
                           class="w-4 h-4 text-corvu-400 focus:ring-corvu-400"
                         />
                         <span class="text-sm text-corvu-text">Practice - Wait for you</span>
@@ -301,19 +307,23 @@ const SettingsDrawer: Component = () => {
                           }
                           class="w-4 h-4 text-corvu-400 focus:ring-corvu-400"
                         />
-                        <span class="text-sm text-corvu-text">Error Tracking - Play with tempo</span>
+                        <span class="text-sm text-corvu-text">
+                          Error Tracking - Play with tempo
+                        </span>
                       </label>
                     </div>
                     <p class="text-xs text-gray-500">
-                      Normal: Auto playback. Practice: Wait for you to play each note. Error Tracking:
-                      Play at tempo and track errors.
+                      Normal: Auto playback. Practice: Wait for you to play each note. Error
+                      Tracking: Play at tempo and track errors.
                     </p>
                   </div>
 
                   <Show when={settings.playbackMode === 'waitForUser'}>
                     <div class="space-y-3 pt-2">
                       <label class="flex items-center justify-between cursor-pointer">
-                        <span class="font-semibold text-corvu-text text-sm">Show Next Note Hint</span>
+                        <span class="font-semibold text-corvu-text text-sm">
+                          Show Next Note Hint
+                        </span>
                         <input
                           type="checkbox"
                           checked={settings.showNextNoteHint}
