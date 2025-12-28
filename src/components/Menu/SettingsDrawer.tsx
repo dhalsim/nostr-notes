@@ -9,7 +9,7 @@ import {
   type Component,
 } from 'solid-js';
 
-import { setSettings, settings, type Waveform, type ChartType } from '@lib/store';
+import { setSettings, settings, type Waveform } from '@lib/store';
 
 // Chrome/Edge on desktop + Android fire `beforeinstallprompt`.
 // Safari/iOS does not, so we show an "Add to Home Screen" hint there.
@@ -144,27 +144,6 @@ const SettingsDrawer: Component<SettingsDrawerProps> = (props) => {
                   <h3 class="text-lg font-bold text-corvu-text border-b border-corvu-300 pb-1">
                     Audio
                   </h3>
-
-                  {/* Waveform Selector */}
-                  <div class="space-y-2">
-                    <h3 class="font-semibold text-corvu-text text-sm">Waveform</h3>
-                    <div class="grid grid-cols-4 gap-2">
-                      <For each={['triangle', 'sine', 'square', 'sawtooth'] as Waveform[]}>
-                        {(type) => (
-                          <button
-                            onClick={() => setSettings('waveform', type)}
-                            class={`p-2 rounded-md text-sm font-medium transition-colors border-2 ${
-                              settings.waveform === type
-                                ? 'bg-corvu-400 text-white border-corvu-400'
-                                : 'bg-white text-corvu-text border-transparent hover:border-corvu-300'
-                            }`}
-                          >
-                            {type}
-                          </button>
-                        )}
-                      </For>
-                    </div>
-                  </div>
 
                   {/* Tempo Control */}
                   <div class="space-y-2">

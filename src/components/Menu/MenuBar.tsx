@@ -35,6 +35,18 @@ const MenuBar: Component = () => {
     setSettings('chartType', newType);
   };
 
+  const handleWaveformToggle = () => {
+    const waveforms: Array<'triangle' | 'sine' | 'square' | 'sawtooth'> = [
+      'triangle',
+      'sine',
+      'square',
+      'sawtooth',
+    ];
+    const currentIndex = waveforms.indexOf(settings.waveform);
+    const nextIndex = (currentIndex + 1) % waveforms.length;
+    setSettings('waveform', waveforms[nextIndex]);
+  };
+
   return (
     <>
       <div class="fixed top-4 right-4 z-50 flex items-center gap-2">
@@ -169,6 +181,78 @@ const MenuBar: Component = () => {
                 <path d="M9 18V5l12-2v13" />
                 <circle cx="6" cy="18" r="3" />
                 <circle cx="18" cy="16" r="3" />
+              </svg>
+            </Show>
+          </button>
+
+          {/* Waveform Toggle */}
+          <button
+            onClick={handleWaveformToggle}
+            aria-label={`Waveform: ${settings.waveform}`}
+            title={`Waveform: ${settings.waveform} (click to cycle)`}
+            class="grid h-10 w-10 place-items-center rounded-full bg-gray-900/90 text-white transition-all hover:bg-gray-800 active:translate-y-0.5 shadow-lg ring-1 ring-white/10"
+          >
+            <Show when={settings.waveform === 'triangle'}>
+              {/* Triangle Icon (triangle wave: up then down) */}
+              <svg
+                class="h-5 w-5"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                aria-hidden="true"
+              >
+                {/* Triangle wave (zig-zag) */}
+                <path d="M3 16L7 8L11 16L15 8L19 16L21 12" />
+              </svg>
+            </Show>
+            <Show when={settings.waveform === 'sine'}>
+              {/* Sine Icon (smooth sine wave) */}
+              <svg
+                class="h-5 w-5"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                aria-hidden="true"
+              >
+                <path d="M3 12c2-4 4-4 6 0s4 4 6 0 4-4 6 0" />
+              </svg>
+            </Show>
+            <Show when={settings.waveform === 'square'}>
+              {/* Square Icon (square wave: high-low-high-low) */}
+              <svg
+                class="h-5 w-5"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                aria-hidden="true"
+              >
+                {/* Square wave (step function) */}
+                <path d="M3 16H7V8H13V16H19V8H21V16" />
+              </svg>
+            </Show>
+            <Show when={settings.waveform === 'sawtooth'}>
+              {/* Sawtooth Icon (ramp up, sharp drop) */}
+              <svg
+                class="h-5 w-5"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                aria-hidden="true"
+              >
+                {/* Sawtooth wave (ramp + vertical drop) */}
+                <path d="M3 16L11 8V16L19 8V16" />
               </svg>
             </Show>
           </button>
