@@ -1,13 +1,16 @@
 import type { Melody, NoteEvent } from '@lib/components/Chart';
 import { playback, setPlayback } from '@lib/playbackStore';
+import { settings } from '@lib/store';
 
 import { playNote, stopNote } from './audioEngine';
-import { checkNoteMatch, createError, ERROR_TYPES } from './noteMatcher';
+import { checkNoteMatch } from './noteMatcher';
 import { userInputTracker } from './userInputTracker';
+import { getNoteDurationMs } from './utils';
 
 let currentlyPlayingNote: string | null = null;
 let inputCheckInterval: ReturnType<typeof setInterval> | null = null;
 let lastCheckedEventCount = 0;
+let noteDurationTimeout: ReturnType<typeof setTimeout> | null = null;
 
 function isSameMelody(a: NoteEvent[], b: NoteEvent[]): boolean {
   if (a.length !== b.length) {
@@ -41,6 +44,53 @@ function checkUserInput(): void {
   }
 
   const expectedNote = melody[expectedNoteIndex];
+  const expectedNoteName = expectedNote.note;
+
+  // Check if we're waiting for duration (current note is set and matches expected)
+  const isWaitingForDuration = playback.currentNoteIndex === expectedNoteIndex;
+
+  if (isWaitingForDuration) {
+    // Check if the key is still pressed
+    if (!userInputTracker.isNotePressed(expectedNoteName)) {
+      // Key was released before duration elapsed - reset and wait for them to press again
+      if (noteDurationTimeout) {
+        clearTimeout(noteDurationTimeout);
+        noteDurationTimeout = null;
+      }
+      // Stop the note that was playing
+      if (currentlyPlayingNote) {
+        stopNote(currentlyPlayingNote);
+        currentlyPlayingNote = null;
+      }
+      // Reset current note index so it doesn't show as playing
+      setPlayback('currentNoteIndex', expectedNoteIndex - 1);
+      return; // Wait for them to press the key again
+    }
+
+    // Get press time from the latest event (which should still be active)
+    const latestEvent = userInputTracker.getLatestEventForNote(expectedNoteName);
+    if (!latestEvent || latestEvent.releaseTime !== null) {
+      // Shouldn't happen if isNotePressed is true, but handle it
+      setPlayback('currentNoteIndex', expectedNoteIndex - 1);
+      return;
+    }
+
+    const pressTime = latestEvent.pressTime;
+    const durationMs = getNoteDurationMs(expectedNote.duration, settings.tempo);
+    const elapsed = Date.now() - pressTime;
+
+    if (elapsed >= durationMs) {
+      // Duration has elapsed and key is still pressed, advance to next note
+      if (noteDurationTimeout) {
+        clearTimeout(noteDurationTimeout);
+        noteDurationTimeout = null;
+      }
+      advanceToNextNote();
+      return;
+    }
+    // Still waiting for duration, don't check for new events yet
+    return;
+  }
 
   // Get total event count to see if we have new events
   const currentEventCount = userInputTracker.getTotalEventCount();
@@ -56,27 +106,34 @@ function checkUserInput(): void {
   // Update the count we've checked
   lastCheckedEventCount = currentEventCount;
 
-  // Check all new events - if any match the expected note, advance
-  // Also record errors for wrong notes
-  let foundCorrectNote = false;
-
+  // Check all new events - if any match the expected note, start duration tracking
   for (const newEvent of newEvents) {
-    if (checkNoteMatch(expectedNote.note, newEvent.note)) {
-      // Correct note! Advance to next note (only once)
-      if (!foundCorrectNote) {
-        foundCorrectNote = true;
-        advanceToNextNote();
-        break; // Stop checking once we've advanced
+    if (checkNoteMatch(expectedNoteName, newEvent.note)) {
+      // Correct note! Start duration tracking
+      const durationMs = getNoteDurationMs(expectedNote.duration, settings.tempo);
+
+      // Set a timeout as a backup to advance if checkUserInput stops being called
+      // Calculate when the timeout should fire based on when the note was pressed
+      const timeUntilAdvance = durationMs - (Date.now() - newEvent.pressTime);
+      if (timeUntilAdvance > 0) {
+        noteDurationTimeout = setTimeout(() => {
+          // Double-check that we're still waiting for this note and it's still pressed
+          if (
+            playback.currentNoteIndex === expectedNoteIndex &&
+            userInputTracker.isNotePressed(expectedNoteName)
+          ) {
+            noteDurationTimeout = null;
+            advanceToNextNote();
+          }
+        }, timeUntilAdvance);
       }
-    } else {
-      // Wrong note - show feedback
-      setPlayback('errors', [
-        ...playback.errors,
-        createError(ERROR_TYPES.WRONG_NOTE, expectedNoteIndex, {
-          expectedNote: expectedNote.note,
-          actualNote: newEvent.note,
-        }),
-      ]);
+
+      // Update current note index immediately so it shows as playing
+      setPlayback('currentNoteIndex', expectedNoteIndex);
+      playNote(expectedNoteName);
+      currentlyPlayingNote = expectedNoteName;
+
+      return; // Found correct note, wait for duration
     }
   }
 }
@@ -107,22 +164,19 @@ function advanceToNextNote(): void {
     setPlayback('nextNoteToPlay', null);
   }
 
-  // Play the note (user already played it, but we play it for audio feedback)
-  playNote(currentNote.note);
-  currentlyPlayingNote = currentNote.note;
-
-  // Stop the note after a short duration (or wait for user to release)
-  // For now, we'll stop it after a brief moment since user already played it
-  setTimeout(() => {
-    if (currentlyPlayingNote === currentNote.note) {
-      stopNote(currentNote.note);
-      currentlyPlayingNote = null;
-    }
-  }, 200);
+  // Stop the note (user already played it, we just played it for visual feedback)
+  if (currentlyPlayingNote) {
+    stopNote(currentlyPlayingNote);
+    currentlyPlayingNote = null;
+  }
 
   // Check if we've reached the end
   if (newIndex >= melody.length) {
-    stop();
+    // Wait for the duration of the last note before stopping
+    const durationMs = getNoteDurationMs(currentNote.duration, settings.tempo);
+    setTimeout(() => {
+      stop();
+    }, durationMs);
   }
 }
 
@@ -207,6 +261,12 @@ export function pause(): void {
   setPlayback('isPlaying', false);
   stopInputChecking();
 
+  // Clear duration tracking timeout
+  if (noteDurationTimeout) {
+    clearTimeout(noteDurationTimeout);
+    noteDurationTimeout = null;
+  }
+
   if (currentlyPlayingNote) {
     stopNote(currentlyPlayingNote);
     currentlyPlayingNote = null;
@@ -224,6 +284,12 @@ export function stop(): void {
   setPlayback('nextNoteToPlay', null);
 
   stopInputChecking();
+
+  // Clear duration tracking timeout
+  if (noteDurationTimeout) {
+    clearTimeout(noteDurationTimeout);
+    noteDurationTimeout = null;
+  }
 
   if (currentlyPlayingNote) {
     stopNote(currentlyPlayingNote);

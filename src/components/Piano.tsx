@@ -299,10 +299,6 @@ const Piano: Component = () => {
                     isActive()
                       ? '!bg-gray-200 shadow-inner scale-y-[0.99] border-b-0'
                       : 'shadow-md border-b-4'
-                  } ${
-                    isNextNoteHint()
-                      ? 'ring-2 ring-yellow-400 ring-offset-2 ring-offset-gray-900 animate-pulse'
-                      : ''
                   }`}
                   style={{
                     width: `${whiteKeyWidth()}%`,
@@ -404,10 +400,6 @@ const Piano: Component = () => {
                 <div
                   class={`absolute top-0 h-[60%] bg-black border-x border-b border-gray-800 rounded-b-md z-20 cursor-pointer transition-transform origin-top flex flex-col justify-end items-center pb-2 ${
                     isActive() ? 'bg-gray-800 scale-y-[0.98]' : 'shadow-lg'
-                  } ${
-                    isNextNoteHint()
-                      ? 'ring-2 ring-yellow-400 ring-offset-1 ring-offset-gray-900 animate-pulse'
-                      : ''
                   }`}
                   style={{
                     left: left,

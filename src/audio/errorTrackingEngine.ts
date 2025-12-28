@@ -11,6 +11,7 @@ import {
   ERROR_TYPES,
 } from './noteMatcher';
 import { userInputTracker } from './userInputTracker';
+import { getNoteDurationMs } from './utils';
 
 let playbackTimeoutId: ReturnType<typeof setTimeout> | null = null;
 let currentlyPlayingNote: string | null = null;
@@ -29,14 +30,6 @@ function isSameMelody(a: NoteEvent[], b: NoteEvent[]): boolean {
   }
 
   return true;
-}
-
-/**
- * Calculates the duration of a note in milliseconds based on tempo
- */
-function getNoteDurationMs(duration: number, tempo: number): number {
-  const msPerBeat = 60000 / tempo;
-  return duration * msPerBeat;
 }
 
 /**
