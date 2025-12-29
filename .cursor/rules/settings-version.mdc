@@ -3,3 +3,7 @@ alwaysApply: true
 ---
 
 Whenever you make a change to the settings structure or behavior that is not backward compatible, you must increment the SETTINGS_VERSION constant in the store.ts file. This ensures correct migration and loading of user preferences.
+
+You don't need to fix the lints yourself, run `npm run lint` and they will be fixed automatically.
+
+You don't need to run the dev server yourself, I usually always have it running.

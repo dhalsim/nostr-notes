@@ -3,7 +3,7 @@ import { playback, setPlayback } from '@lib/playbackStore';
 import { settings } from '@lib/store';
 
 import { playNote, stopNote } from '../audioEngine';
-import { checkNoteMatch } from '../noteMatcher';
+import { checkNoteMatchAnyOctave } from '../noteMatcher';
 import { userInputTracker } from '../userInputTracker';
 import { getNoteDurationMs } from '../utils';
 
@@ -83,8 +83,8 @@ function checkUserInput(): void {
   const isWaitingForDuration = playback.currentNoteIndex === expectedNoteIndex;
 
   if (isWaitingForDuration) {
-    // Check if the key is still pressed
-    if (!userInputTracker.isNotePressed(expectedNoteName)) {
+    // Check if the key is still pressed (any octave)
+    if (!userInputTracker.isNotePressedAnyOctave(expectedNoteName)) {
       // Key was released before duration elapsed - reset and wait for them to press again
       if (noteDurationTimeout) {
         clearTimeout(noteDurationTimeout);
@@ -101,7 +101,7 @@ function checkUserInput(): void {
     }
 
     // Get press time from the latest event (which should still be active)
-    const latestEvent = userInputTracker.getLatestEventForNote(expectedNoteName);
+    const latestEvent = userInputTracker.getLatestEventForNoteAnyOctave(expectedNoteName);
     if (!latestEvent || latestEvent.releaseTime !== null) {
       // Shouldn't happen if isNotePressed is true, but handle it
       setPlayback('currentNoteIndex', expectedNoteIndex - 1);
@@ -141,7 +141,7 @@ function checkUserInput(): void {
 
   // Check all new events - if any match the expected note, start duration tracking
   for (const newEvent of newEvents) {
-    if (checkNoteMatch(expectedNoteName, newEvent.note)) {
+    if (checkNoteMatchAnyOctave(expectedNoteName, newEvent.note)) {
       // Correct note! Start duration tracking
       const durationMs = getNoteDurationMs(expectedNote.duration, settings.tempo);
 
@@ -153,7 +153,7 @@ function checkUserInput(): void {
           // Double-check that we're still waiting for this note and it's still pressed
           if (
             playback.currentNoteIndex === expectedNoteIndex &&
-            userInputTracker.isNotePressed(expectedNoteName)
+            userInputTracker.isNotePressedAnyOctave(expectedNoteName)
           ) {
             noteDurationTimeout = null;
             advanceToNextNote();
@@ -163,8 +163,8 @@ function checkUserInput(): void {
 
       // Update current note index immediately so it shows as playing
       setPlayback('currentNoteIndex', expectedNoteIndex);
-      playNote(expectedNoteName);
-      currentlyPlayingNote = expectedNoteName;
+      playNote(newEvent.note);
+      currentlyPlayingNote = newEvent.note;
 
       return; // Found correct note, wait for duration
     }

@@ -52,11 +52,15 @@ class UserInputTracker {
   }
 
   /**
-   * Get the most recent event for a specific note
+   * Get the most recent event for any octave of a note (octave-agnostic)
    */
-  getLatestEventForNote(note: string): UserInputEvent | null {
+  getLatestEventForNoteAnyOctave(note: string): UserInputEvent | null {
+    // Extract note name without octave
+    const noteName = note.replace(/-?\d+$/, '');
+
     for (let i = this.events.length - 1; i >= 0; i--) {
-      if (this.events[i].note === note) {
+      const eventNoteName = this.events[i].note.replace(/-?\d+$/, '');
+      if (eventNoteName.toLowerCase() === noteName.toLowerCase()) {
         return this.events[i];
       }
     }
@@ -97,6 +101,24 @@ class UserInputTracker {
    */
   isNotePressed(note: string): boolean {
     return this.activePresses.has(note);
+  }
+
+  /**
+   * Check if any octave of a note is currently pressed (octave-agnostic)
+   */
+  isNotePressedAnyOctave(note: string): boolean {
+    // Extract note name without octave (e.g., "C4" -> "C", "F#5" -> "F#")
+    const noteName = note.replace(/-?\d+$/, '');
+
+    // Check if any pressed note matches this note name (any octave)
+    for (const pressedNote of this.activePresses.keys()) {
+      const pressedNoteName = pressedNote.replace(/-?\d+$/, '');
+      if (pressedNoteName.toLowerCase() === noteName.toLowerCase()) {
+        return true;
+      }
+    }
+
+    return false;
   }
 
   /**

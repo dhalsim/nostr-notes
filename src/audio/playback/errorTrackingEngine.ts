@@ -6,7 +6,7 @@ import { playNote, stopNote } from '../audioEngine';
 import {
   calculateTimingError,
   checkDurationMatch,
-  checkNoteMatch,
+  checkNoteMatchAnyOctave,
   createError,
   ERROR_TYPES,
 } from '../noteMatcher';
@@ -68,7 +68,7 @@ function checkNoteErrors(noteIndex: number, expectedNote: NoteEvent, noteStartTi
   }
 
   // Find the event that matches the expected note (if any)
-  const matchingEvent = userEvents.find((event) => checkNoteMatch(expectedNote.note, event.note));
+  const matchingEvent = userEvents.find((event) => checkNoteMatchAnyOctave(expectedNote.note, event.note));
 
   if (!matchingEvent) {
     // User played wrong note(s)

@@ -1,10 +1,14 @@
 import type { PlaybackError } from '@lib/playbackStore';
 
 /**
- * Check if two notes match (case-insensitive)
+ * Check if two notes match (case-insensitive, octave-agnostic)
  */
-export function checkNoteMatch(expectedNote: string, userNote: string): boolean {
-  return expectedNote.toLowerCase() === userNote.toLowerCase();
+export function checkNoteMatchAnyOctave(expectedNote: string, userNote: string): boolean {
+  // Extract note name without octave (e.g., "C4" -> "C", "F#5" -> "F#")
+  const expectedNoteName = expectedNote.replace(/-?\d+$/, '');
+  const userNoteName = userNote.replace(/-?\d+$/, '');
+
+  return expectedNoteName.toLowerCase() === userNoteName.toLowerCase();
 }
 
 /**

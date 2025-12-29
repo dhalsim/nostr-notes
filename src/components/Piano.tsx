@@ -3,6 +3,7 @@ import type { Component } from 'solid-js';
 
 import { playNote, stopNote } from '@lib/audio/audioEngine';
 import { toggle } from '@lib/audio/playback/router';
+import { checkNoteMatchAnyOctave } from '@lib/audio/noteMatcher';
 import { userInputTracker } from '@lib/audio/userInputTracker';
 import { playback } from '@lib/playbackStore';
 import { setSettings, settings } from '@lib/store';
@@ -288,7 +289,10 @@ const Piano: Component = () => {
 
               const isActive = () => activeKeys().has(note);
               const isPlaybackHighlight = () => playbackNote() === note;
-              const isNextNoteHint = () => shouldShowNextNoteHint() && nextNoteToPlay() === note;
+              const isNextNoteHint = () =>
+                shouldShowNextNoteHint() &&
+                nextNoteToPlay() !== null &&
+                checkNoteMatchAnyOctave(nextNoteToPlay()!, note);
               const contrastColor = () =>
                 settings.showKeyColors
                   ? getNoteContrastColor(note, settings.contrastColors)
