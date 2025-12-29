@@ -8,6 +8,8 @@ import SettingsDrawer from './SettingsDrawer';
 import AudioSettingsDrawer from './AudioSettingsDrawer';
 
 const MenuBar: Component = () => {
+  let menuBarRef: HTMLDivElement | undefined;
+  let overlayRef: HTMLDivElement | undefined;
   const [isExpanded, setIsExpanded] = createSignal(false);
   const [activeDrawer, setActiveDrawer] = createSignal<'settings' | 'playback' | 'audio' | null>(null);
 
@@ -15,7 +17,7 @@ const MenuBar: Component = () => {
     // Toggle: if clicking the same drawer, close it; otherwise open the new one
     if (activeDrawer() === drawer) {
       setActiveDrawer(null);
-      setIsExpanded(false);
+      // setIsExpanded(false);
     } else {
       setActiveDrawer(drawer);
       setIsExpanded(true); // Keep icons visible when drawer is open
@@ -25,6 +27,80 @@ const MenuBar: Component = () => {
   const handleClose = () => {
     setActiveDrawer(null);
     setIsExpanded(false); // Show burger menu when all drawers are closed
+  };
+
+  // Handle overlay clicks - single source of truth
+  const handleOverlayClick = (e: MouseEvent) => {
+    const target = e.target as HTMLElement;
+    
+    // Check if click coordinates are within MenuBar bounds
+    // (even if overlay is on top, we can check coordinates)
+    if (menuBarRef) {
+      const menuRect = menuBarRef.getBoundingClientRect();
+      const clickX = e.clientX;
+      const clickY = e.clientY;
+      
+      // If click is within MenuBar bounds, find which button was clicked
+      if (
+        clickX >= menuRect.left &&
+        clickX <= menuRect.right &&
+        clickY >= menuRect.top &&
+        clickY <= menuRect.bottom
+      ) {
+        // Find all buttons in MenuBar and check which one contains the click coordinates
+        const buttons = menuBarRef.querySelectorAll('button');
+        for (const button of buttons) {
+          const buttonRect = button.getBoundingClientRect();
+          if (
+            clickX >= buttonRect.left &&
+            clickX <= buttonRect.right &&
+            clickY >= buttonRect.top &&
+            clickY <= buttonRect.bottom
+          ) {
+            // Found the button that was clicked - determine which drawer it opens
+            const ariaLabel = button.getAttribute('aria-label') || '';
+            let targetDrawer: 'settings' | 'playback' | 'audio' | null = null;
+            
+            if (ariaLabel === 'Settings') {
+              targetDrawer = 'settings';
+            } else if (ariaLabel === 'Audio Settings') {
+              targetDrawer = 'audio';
+            } else if (ariaLabel === 'Playback Mode') {
+              targetDrawer = 'playback';
+            }
+            
+            // If it's a drawer button
+            if (targetDrawer) {
+              // If a drawer is currently open, close it first, then open the new one
+              if (activeDrawer() !== null && activeDrawer() !== targetDrawer) {
+                // Close the current drawer first
+                setActiveDrawer(null);
+                // Wait for close animation to complete, then open the new drawer with a smooth transition
+                setTimeout(() => {
+                  // Add a small delay to ensure the old drawer is fully closed before opening new one
+                  // This creates a smoother sequential animation
+                  setActiveDrawer(targetDrawer);
+                  setIsExpanded(true);
+                }, 500);
+              } else {
+                // No drawer open or same drawer, toggle immediately
+                handleIconClick(targetDrawer);
+              }
+            } else {
+              // Not a drawer button (e.g., close, toggle buttons), trigger normally
+              button.click();
+            }
+            return;
+          }
+        }
+      }
+    }
+    
+    // If click is on overlay itself (not MenuBar), close drawer
+    if (target === overlayRef || overlayRef?.contains(target)) {
+      setActiveDrawer(null);
+      // setIsExpanded(false);
+    }
   };
 
   const handleOctaveToggle = () => {
@@ -82,8 +158,18 @@ const MenuBar: Component = () => {
 
   return (
     <>
-      <div class="fixed top-4 right-4 z-50 flex items-center gap-2">
-        <Show when={!isExpanded()}>
+      {/* Single shared overlay - only show when drawer is open */}
+      <Show when={activeDrawer() !== null}>
+        <div
+          ref={overlayRef}
+          class="fixed inset-0 z-50 bg-black/50 transition-opacity duration-500"
+          onClick={handleOverlayClick}
+          style={{ 'pointer-events': 'auto' }}
+        />
+      </Show>
+
+      <div ref={menuBarRef} class="fixed top-4 right-4 z-[100] flex items-center gap-2">
+        <Show when={!isExpanded() && !activeDrawer()}>
           {/* Burger Menu Icon */}
           <button
             onClick={() => setIsExpanded(true)}
@@ -108,13 +194,15 @@ const MenuBar: Component = () => {
           </button>
         </Show>
 
-        <Show when={isExpanded()}>
+        <Show when={isExpanded() || activeDrawer() !== null}>
           {/* Settings Icon */}
           <button
             onClick={() => handleIconClick('settings')}
             aria-label="Settings"
             title="Settings"
-            class="grid h-10 w-10 place-items-center rounded-full bg-gray-900/90 text-white transition-all hover:bg-gray-800 active:translate-y-0.5 shadow-lg ring-1 ring-white/10"
+            class={`grid h-10 w-10 place-items-center rounded-full text-white transition-all hover:bg-gray-800 active:translate-y-0.5 shadow-lg ring-1 ring-white/10 ${
+              activeDrawer() === 'settings' ? 'bg-corvu-400' : 'bg-gray-900/90'
+            }`}
           >
             <svg
               class="h-5 w-5"
@@ -136,7 +224,9 @@ const MenuBar: Component = () => {
             onClick={() => handleIconClick('audio')}
             aria-label="Audio Settings"
             title="Audio Settings"
-            class="grid h-10 w-10 place-items-center rounded-full bg-gray-900/90 text-white transition-all hover:bg-gray-800 active:translate-y-0.5 shadow-lg ring-1 ring-white/10"
+            class={`grid h-10 w-10 place-items-center rounded-full text-white transition-all hover:bg-gray-800 active:translate-y-0.5 shadow-lg ring-1 ring-white/10 ${
+              activeDrawer() === 'audio' ? 'bg-corvu-400' : 'bg-gray-900/90'
+            }`}
           >
             <svg
               class="h-5 w-5"
@@ -158,7 +248,9 @@ const MenuBar: Component = () => {
             onClick={() => handleIconClick('playback')}
             aria-label="Playback Mode"
             title="Playback Mode"
-            class="grid h-10 w-10 place-items-center rounded-full bg-gray-900/90 text-white transition-all hover:bg-gray-800 active:translate-y-0.5 shadow-lg ring-1 ring-white/10"
+            class={`grid h-10 w-10 place-items-center rounded-full text-white transition-all hover:bg-gray-800 active:translate-y-0.5 shadow-lg ring-1 ring-white/10 ${
+              activeDrawer() === 'playback' ? 'bg-corvu-400' : 'bg-gray-900/90'
+            }`}
           >
             <svg
               class="h-5 w-5"
@@ -336,12 +428,13 @@ const MenuBar: Component = () => {
         </Show>
       </div>
 
+      {/* Drawers - with closeOnOutsidePointer={false} so MenuBar handles overlay clicks */}
       <SettingsDrawer
         open={activeDrawer() === 'settings'}
         onOpenChange={(open) => {
-          if (!open) {
-            handleClose();
-          } else {
+          // Don't handle close here - MenuBar handles it via overlay clicks
+          // Only handle open to ensure menu bar is expanded
+          if (open) {
             setIsExpanded(true);
           }
         }}
@@ -349,9 +442,9 @@ const MenuBar: Component = () => {
       <PlaybackModeDrawer
         open={activeDrawer() === 'playback'}
         onOpenChange={(open) => {
-          if (!open) {
-            handleClose();
-          } else {
+          // Don't handle close here - MenuBar handles it via overlay clicks
+          // Only handle open to ensure menu bar is expanded
+          if (open) {
             setIsExpanded(true);
           }
         }}
@@ -359,9 +452,9 @@ const MenuBar: Component = () => {
       <AudioSettingsDrawer
         open={activeDrawer() === 'audio'}
         onOpenChange={(open) => {
-          if (!open) {
-            handleClose();
-          } else {
+          // Don't handle close here - MenuBar handles it via overlay clicks
+          // Only handle open to ensure menu bar is expanded
+          if (open) {
             setIsExpanded(true);
           }
         }}

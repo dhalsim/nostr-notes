@@ -1,4 +1,3 @@
-import Drawer from '@corvu/drawer';
 import {
   For,
   Show,
@@ -9,6 +8,7 @@ import {
 
 import { setSettings, settings, type Waveform, type InstrumentPreset } from '@lib/store';
 import { BUILTIN_PRESETS } from '@lib/audio/presets';
+import CustomDrawer from './CustomDrawer';
 
 interface AudioSettingsDrawerProps {
   open: boolean;
@@ -168,25 +168,8 @@ const AudioSettingsDrawer: Component<AudioSettingsDrawerProps> = (props) => {
   };
 
   return (
-    <Drawer breakPoints={[0.75]} open={props.open} onOpenChange={props.onOpenChange}>
-      {(drawerProps) => (
-        <>
-          <Drawer.Portal>
-            <Drawer.Overlay
-              class="fixed inset-0 z-50 bg-black/50 transition-opacity duration-500"
-              style={{
-                'background-color': `rgb(0 0 0 / ${0.5 * drawerProps.openPercentage})`,
-              }}
-            />
-            <Drawer.Content class="fixed inset-x-0 bottom-0 z-50 flex h-full max-h-[600px] flex-col rounded-t-2xl border-t-4 border-corvu-400 bg-corvu-100 pt-3 transition-transform duration-500 after:absolute after:inset-x-0 after:top-full after:h-1/2 after:bg-inherit md:select-none">
-              <div class="h-1 w-12 self-center rounded-full bg-corvu-400/50 mb-6" />
-
-              <div class="px-6 space-y-8 overflow-y-auto pb-8">
-                <Drawer.Label class="text-2xl font-bold text-center text-corvu-text">
-                  Audio Settings
-                </Drawer.Label>
-
-                {/* Preset Selector */}
+    <CustomDrawer open={props.open} onOpenChange={props.onOpenChange} label="Audio Settings">
+      {/* Preset Selector */}
                 <div class="space-y-2">
                   <label class="font-semibold text-corvu-text text-sm">Instrument Preset</label>
                   <div class="flex gap-2">
@@ -538,12 +521,7 @@ const AudioSettingsDrawer: Component<AudioSettingsDrawerProps> = (props) => {
                     </div>
                   </div>
                 </details>
-              </div>
-            </Drawer.Content>
-          </Drawer.Portal>
-        </>
-      )}
-    </Drawer>
+    </CustomDrawer>
   );
 };
 
