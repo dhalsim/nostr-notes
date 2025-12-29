@@ -1,6 +1,7 @@
 import type { Melody, NoteEvent } from '@lib/components/Chart';
 import { playback, setPlayback } from '@lib/playbackStore';
-import { settings } from '@lib/store';
+import { setSettings, settings } from '@lib/store';
+import { adjustBaseOctaveForNote } from '@lib/utils/musicUtils';
 
 import { playNote, stopNote } from '../audioEngine';
 import { checkNoteMatchAnyOctave } from '../noteMatcher';
@@ -26,6 +27,15 @@ function isSameMelody(a: NoteEvent[], b: NoteEvent[]): boolean {
   return true;
 }
 
+function setupMelody(melodyNotes: NoteEvent[]): void {
+  setPlayback('melody', melodyNotes);
+  setPlayback('currentNoteIndex', -1);
+  setPlayback('lastCompletedNoteIndex', -1);
+  setPlayback('expectedNoteIndex', -1);
+  setPlayback('errors', []);
+  userInputTracker.clear();
+}
+
 /**
  * Initialize the engine with a melody (without starting playback)
  * This sets up the melody and nextNoteToPlay for hints
@@ -39,12 +49,7 @@ export function init(melody?: Melody | NoteEvent[]): void {
 
   // Only set melody if it's different from current
   if (!isSameMelody(melodyNotes, playback.melody)) {
-    setPlayback('melody', melodyNotes);
-    setPlayback('currentNoteIndex', -1);
-    setPlayback('lastCompletedNoteIndex', -1);
-    setPlayback('expectedNoteIndex', -1);
-    setPlayback('errors', []);
-    userInputTracker.clear();
+    setupMelody(melodyNotes);
   }
 
   // Set next note to play for piano highlighting (if in waitForUser mode)
@@ -52,7 +57,17 @@ export function init(melody?: Melody | NoteEvent[]): void {
     const startIndex =
       playback.lastCompletedNoteIndex < 0 ? 0 : playback.lastCompletedNoteIndex + 1;
     if (startIndex < playback.melody.length) {
-      setPlayback('nextNoteToPlay', playback.melody[startIndex].note);
+      const nextNote = playback.melody[startIndex].note;
+      // Adjust baseOctave to make the next note visible
+      const optimalBaseOctave = adjustBaseOctaveForNote(
+        nextNote,
+        settings.baseOctave,
+        settings.octaveCount,
+      );
+      if (optimalBaseOctave !== settings.baseOctave) {
+        setSettings('baseOctave', optimalBaseOctave);
+      }
+      setPlayback('nextNoteToPlay', nextNote);
     } else {
       setPlayback('nextNoteToPlay', null);
     }
@@ -192,7 +207,17 @@ function advanceToNextNote(): void {
 
   // Update next note to play for piano highlighting
   if (newIndex < melody.length) {
-    setPlayback('nextNoteToPlay', melody[newIndex].note);
+    const nextNote = melody[newIndex].note;
+    // Adjust baseOctave to make the next note visible
+    const optimalBaseOctave = adjustBaseOctaveForNote(
+      nextNote,
+      settings.baseOctave,
+      settings.octaveCount,
+    );
+    if (optimalBaseOctave !== settings.baseOctave) {
+      setSettings('baseOctave', optimalBaseOctave);
+    }
+    setPlayback('nextNoteToPlay', nextNote);
   } else {
     setPlayback('nextNoteToPlay', null);
   }
@@ -243,20 +268,9 @@ function stopInputChecking(): void {
 export function play(input?: Melody | NoteEvent[]): void {
   const melodyNotes = Array.isArray(input) ? input : input?.notes;
 
-  // If melody is provided, set it. Only reset if it's truly a new melody.
+  // Setup melody if different
   if (melodyNotes && !isSameMelody(melodyNotes, playback.melody)) {
-    setPlayback('melody', melodyNotes);
-    setPlayback('currentNoteIndex', -1);
-    setPlayback('lastCompletedNoteIndex', -1);
-    setPlayback('expectedNoteIndex', -1);
-    setPlayback('errors', []);
-    userInputTracker.clear();
-    // Set next note to play for piano highlighting when melody is first set
-    if (melodyNotes.length > 0) {
-      setPlayback('nextNoteToPlay', melodyNotes[0].note);
-    } else {
-      setPlayback('nextNoteToPlay', null);
-    }
+    setupMelody(melodyNotes);
   }
 
   // Don't start if no melody
@@ -284,7 +298,17 @@ export function play(input?: Melody | NoteEvent[]): void {
 
   // Set next note to play for piano highlighting (always update when play() is called)
   if (startIndex < playback.melody.length) {
-    setPlayback('nextNoteToPlay', playback.melody[startIndex].note);
+    const nextNote = playback.melody[startIndex].note;
+    // Adjust baseOctave to make the next note visible
+    const optimalBaseOctave = adjustBaseOctaveForNote(
+      nextNote,
+      settings.baseOctave,
+      settings.octaveCount,
+    );
+    if (optimalBaseOctave !== settings.baseOctave) {
+      setSettings('baseOctave', optimalBaseOctave);
+    }
+    setPlayback('nextNoteToPlay', nextNote);
   } else {
     setPlayback('nextNoteToPlay', null);
   }
@@ -371,7 +395,17 @@ export function seek(noteIndex: number, _delayMs: number = 0): void {
 
   // Update next note to play
   if (clampedIndex >= 0 && clampedIndex < playback.melody.length) {
-    setPlayback('nextNoteToPlay', playback.melody[clampedIndex].note);
+    const nextNote = playback.melody[clampedIndex].note;
+    // Adjust baseOctave to make the next note visible
+    const optimalBaseOctave = adjustBaseOctaveForNote(
+      nextNote,
+      settings.baseOctave,
+      settings.octaveCount,
+    );
+    if (optimalBaseOctave !== settings.baseOctave) {
+      setSettings('baseOctave', optimalBaseOctave);
+    }
+    setPlayback('nextNoteToPlay', nextNote);
   } else {
     setPlayback('nextNoteToPlay', null);
   }

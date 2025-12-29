@@ -115,3 +115,31 @@ export const getSolfege = (note: string): string => {
   const noteName = note.replace(/-?\d+$/, '');
   return SOLFEGE_MAP[noteName] || noteName;
 };
+
+export const getNoteOctave = (note: string): number => {
+  const match = note.match(/^([A-G]#?)(-?\d+)$/);
+  return match ? parseInt(match[2], 10) : 4; // Default to 4 if invalid
+};
+
+export const isNoteVisible = (note: string, baseOctave: number, octaveCount: number): boolean => {
+  const noteOctave = getNoteOctave(note);
+  const maxOctave = baseOctave + octaveCount - 1;
+  return noteOctave >= baseOctave && noteOctave <= maxOctave;
+};
+
+export const adjustBaseOctaveForNote = (
+  note: string,
+  currentBaseOctave: number,
+  octaveCount: number,
+): number => {
+  const noteOctave = getNoteOctave(note);
+  const currentMaxOctave = currentBaseOctave + octaveCount - 1;
+
+  // If note is already visible, don't change
+  if (noteOctave >= currentBaseOctave && noteOctave <= currentMaxOctave) {
+    return currentBaseOctave;
+  }
+
+  // Adjust baseOctave to make the note visible (prefer showing higher range)
+  return Math.max(1, noteOctave - octaveCount + 1);
+};

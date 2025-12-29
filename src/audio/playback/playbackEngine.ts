@@ -1,6 +1,7 @@
 import type { Melody, NoteEvent } from '@lib/components/Chart';
 import { playback, setPlayback } from '@lib/playbackStore';
 import { setSettings, settings } from '@lib/store';
+import { adjustBaseOctaveForNote } from '@lib/utils/musicUtils';
 
 import { playNote, stopNote } from '../audioEngine';
 import { getNoteDurationMs } from '../utils';
@@ -79,6 +80,17 @@ function scheduleNextNote(noteIndex: number): void {
 
   // Update current note index in store
   setPlayback('currentNoteIndex', noteIndex);
+
+  // Adjust baseOctave to make the current note visible
+  const optimalBaseOctave = adjustBaseOctaveForNote(
+    note.note,
+    settings.baseOctave,
+    settings.octaveCount,
+  );
+
+  if (optimalBaseOctave !== settings.baseOctave) {
+    setSettings('baseOctave', optimalBaseOctave);
+  }
 
   // Play the current note
   playNote(note.note);
