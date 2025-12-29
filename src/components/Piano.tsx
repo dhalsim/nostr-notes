@@ -281,9 +281,10 @@ const Piano: Component = () => {
           {/* White Keys */}
           <For each={keys().whiteKeys}>
             {(note) => {
-              const color = settings.showKeyColors
-                ? getNoteColor(note, settings.noteColors)
-                : undefined;
+              const color = () =>
+                settings.showKeyColors
+                  ? getNoteColor(note, settings.noteColors)
+                  : undefined;
 
               const isActive = () => activeKeys().has(note);
               const isPlaybackHighlight = () => playbackNote() === note;
@@ -302,10 +303,10 @@ const Piano: Component = () => {
                   }`}
                   style={{
                     width: `${whiteKeyWidth()}%`,
-                    ...(color
+                    ...(color()
                       ? {
-                          'background-color': color,
-                          'border-color': isActive() ? color : undefined,
+                          'background-color': color(),
+                          'border-color': isActive() ? color() : undefined,
                           filter: isActive() ? 'brightness(1.1)' : 'brightness(1)',
                         }
                       : {}),
@@ -347,17 +348,17 @@ const Piano: Component = () => {
                   )}
                   {settings.showNotes && (
                     <span
-                      class={`text-[10px] sm:text-xs font-bold mb-1 truncate w-full text-center relative z-40 ${color ? 'drop-shadow-md' : 'text-gray-400'}`}
-                      style={color ? { color: contrastColor() } : {}}
+                      class={`text-[10px] sm:text-xs font-bold mb-1 truncate w-full text-center relative z-40 ${color() ? 'drop-shadow-md' : 'text-gray-400'}`}
+                      style={color() ? { color: contrastColor() } : {}}
                     >
                       {note}
                     </span>
                   )}
                   {showShortcuts() && (
                     <span
-                      class={`text-[9px] sm:text-[10px] font-bold border px-1 rounded ${color ? 'border-white/50' : 'text-corvu-400 border-corvu-200'}`}
+                      class={`text-[9px] sm:text-[10px] font-bold border px-1 rounded ${color() ? 'border-white/50' : 'text-corvu-400 border-corvu-200'}`}
                       style={
-                        color ? { color: contrastColor(), 'border-color': contrastColor() } : {}
+                        color() ? { color: contrastColor(), 'border-color': contrastColor() } : {}
                       }
                     >
                       {getKeyLabel(note)}
@@ -384,9 +385,10 @@ const Piano: Component = () => {
 
               const left = `calc(${item.pos * whiteKeyWidth()}% - ${finalWidth / 2}%)`;
 
-              const color = settings.showKeyColors
-                ? getNoteColor(item.note, settings.noteColors)
-                : undefined;
+              const color = () =>
+                settings.showKeyColors
+                  ? getNoteColor(item.note, settings.noteColors)
+                  : undefined;
               const isActive = () => activeKeys().has(item.note);
               const isPlaybackHighlight = () => playbackNote() === item.note;
               const isNextNoteHint = () =>
@@ -404,9 +406,9 @@ const Piano: Component = () => {
                   style={{
                     left: left,
                     width: `${finalWidth}%`,
-                    ...(color
+                    ...(color()
                       ? {
-                          'background-color': color,
+                          'background-color': color(),
                           'border-color': 'rgba(0,0,0,0.3)', // keep slight border
                           filter: isActive() ? 'brightness(1.2)' : 'brightness(0.9)', // Darker than white keys by default if colored
                         }
@@ -449,17 +451,17 @@ const Piano: Component = () => {
                   )}
                   {settings.showNotes && (
                     <span
-                      class={`text-[8px] sm:text-[9px] font-bold mb-0.5 truncate w-full text-center relative z-40 ${color ? 'drop-shadow-sm' : 'text-gray-300'}`}
-                      style={color ? { color: contrastColor() } : {}}
+                      class={`text-[8px] sm:text-[9px] font-bold mb-0.5 truncate w-full text-center relative z-40 ${color() ? 'drop-shadow-sm' : 'text-gray-300'}`}
+                      style={color() ? { color: contrastColor() } : {}}
                     >
                       {item.note}
                     </span>
                   )}
                   {showShortcuts() && (
                     <span
-                      class={`text-[8px] font-bold border px-0.5 rounded ${color ? 'border-white/50 bg-black/20' : 'text-corvu-300 border-gray-600 bg-gray-900/80'}`}
+                      class={`text-[8px] font-bold border px-0.5 rounded ${color() ? 'border-white/50 bg-black/20' : 'text-corvu-300 border-gray-600 bg-gray-900/80'}`}
                       style={
-                        color ? { color: contrastColor(), 'border-color': contrastColor() } : {}
+                        color() ? { color: contrastColor(), 'border-color': contrastColor() } : {}
                       }
                     >
                       {getKeyLabel(item.note)}

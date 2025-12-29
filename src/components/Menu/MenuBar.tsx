@@ -81,7 +81,7 @@ const MenuBar: Component = () => {
                   // This creates a smoother sequential animation
                   setActiveDrawer(targetDrawer);
                   setIsExpanded(true);
-                }, 500);
+                }, 100);
               } else {
                 // No drawer open or same drawer, toggle immediately
                 handleIconClick(targetDrawer);
@@ -99,7 +99,6 @@ const MenuBar: Component = () => {
     // If click is on overlay itself (not MenuBar), close drawer
     if (target === overlayRef || overlayRef?.contains(target)) {
       setActiveDrawer(null);
-      // setIsExpanded(false);
     }
   };
 
@@ -154,6 +153,10 @@ const MenuBar: Component = () => {
         });
       }
     }
+  };
+
+  const handleShowKeyColorsToggle = () => {
+    setSettings('showKeyColors', !settings.showKeyColors);
   };
 
   return (
@@ -400,6 +403,56 @@ const MenuBar: Component = () => {
               >
                 {/* Sawtooth wave (ramp + vertical drop) */}
                 <path d="M3 16L11 8V16L19 8V16" />
+              </svg>
+            </Show>
+          </button>
+
+          {/* Show Key Colors Toggle */}
+          <button
+            onClick={handleShowKeyColorsToggle}
+            aria-label={`Key Colors: ${settings.showKeyColors ? 'On' : 'Off'}`}
+            title={`Key Colors: ${settings.showKeyColors ? 'On' : 'Off'} (click to toggle)`}
+            class={`grid h-10 w-10 place-items-center rounded-full text-white transition-all hover:bg-gray-800 active:translate-y-0.5 shadow-lg ring-1 ring-white/10 ${
+              settings.showKeyColors ? 'bg-corvu-400' : 'bg-gray-900/90'
+            }`}
+          >
+            <Show
+              when={settings.showKeyColors}
+              fallback={
+                <svg
+                  class="h-5 w-5"
+                  viewBox="0 0 512 512"
+                  fill="none"
+                  aria-hidden="true"
+                >
+                  {/* Original icon.svg content - will scale automatically */}
+                  <rect width="512" height="512" fill="#111827"/>
+                  <rect x="64" y="128" width="64" height="256" fill="white"/>
+                  <rect x="144" y="128" width="64" height="256" fill="white"/>
+                  <rect x="224" y="128" width="64" height="256" fill="white"/>
+                  <rect x="304" y="128" width="64" height="256" fill="white"/>
+                  <rect x="384" y="128" width="64" height="256" fill="white"/>
+                  <rect x="112" y="128" width="32" height="160" fill="black"/>
+                  <rect x="200" y="128" width="32" height="160" fill="black"/>
+                  <rect x="352" y="128" width="32" height="160" fill="black"/>
+                </svg>
+              }
+            >
+              {/* Colorful version using original icon.svg coordinates */}
+              <svg
+                class="h-5 w-5"
+                viewBox="0 0 512 512"
+                fill="none"
+                aria-hidden="true"
+              >
+                <rect x="64" y="128" width="64" height="256" fill="#ef4444" stroke="currentColor" stroke-width="4" />
+                <rect x="144" y="128" width="64" height="256" fill="#f97316" stroke="currentColor" stroke-width="4" />
+                <rect x="224" y="128" width="64" height="256" fill="#eab308" stroke="currentColor" stroke-width="4" />
+                <rect x="304" y="128" width="64" height="256" fill="#22c55e" stroke="currentColor" stroke-width="4" />
+                <rect x="384" y="128" width="64" height="256" fill="#3b82f6" stroke="currentColor" stroke-width="4" />
+                <rect x="112" y="128" width="32" height="160" fill="#b91c1c" stroke="currentColor" stroke-width="4" />
+                <rect x="200" y="128" width="32" height="160" fill="#c2410c" stroke="currentColor" stroke-width="4" />
+                <rect x="352" y="128" width="32" height="160" fill="#1e40af" stroke="currentColor" stroke-width="4" />
               </svg>
             </Show>
           </button>

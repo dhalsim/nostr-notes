@@ -114,25 +114,6 @@ const SettingsDrawer: Component<SettingsDrawerProps> = (props) => {
 
   return (
     <CustomDrawer open={props.open} onOpenChange={props.onOpenChange} label="Settings">
-      {/* Charts & Colors Section */}
-      <div class="space-y-4">
-        <h3 class="text-lg font-bold text-corvu-text border-b border-corvu-300 pb-1">
-          Colors
-        </h3>
-
-        <div class="space-y-3 pt-2">
-          <label class="flex items-center justify-between cursor-pointer">
-            <span class="font-semibold text-corvu-text text-sm">Color Piano Keys</span>
-            <input
-              type="checkbox"
-              checked={settings.showKeyColors}
-              onChange={(e) => setSettings('showKeyColors', e.currentTarget.checked)}
-              class="w-5 h-5 rounded border-corvu-300 text-corvu-400 focus:ring-corvu-400"
-            />
-          </label>
-        </div>
-      </div>
-
       {/* Display Settings Section */}
       <div class="space-y-4">
         <h3 class="text-lg font-bold text-corvu-text border-b border-corvu-300 pb-1">
